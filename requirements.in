@@ -1,0 +1,6 @@
+pip-tools
+torch
+pytorch-lightning
+wandb
+numpy
+scipy
