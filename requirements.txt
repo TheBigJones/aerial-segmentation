@@ -59,12 +59,15 @@ multidict==5.1.0
 numpy==1.20.2
     # via
     #   -r requirements.in
+    #   opencv-python
     #   pytorch-lightning
     #   scipy
     #   tensorboard
     #   torch
 oauthlib==3.1.0
     # via requests-oauthlib
+opencv-python==4.5.1.48
+    # via -r requirements.in
 pathtools==0.1.2
     # via wandb
 pep517==0.10.0
