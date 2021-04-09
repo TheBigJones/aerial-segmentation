@@ -48,6 +48,7 @@ def image2tile(prefix, scene, dataset, orthofile, elevafile, labelfile, windowx=
 
             orthochip = ortho[yi:yi+windowy, xi:xi+windowx, :]
             labelchip = label[yi:yi+windowy, xi:xi+windowx, :]
+            elevachip = eleva[yi:yi+windowy, xi:xi+windowx]
 
             orthochip, classchip = color2class(orthochip, labelchip)
 
@@ -56,12 +57,14 @@ def image2tile(prefix, scene, dataset, orthofile, elevafile, labelfile, windowx=
 
             orthochip_filename = os.path.join(prefix, 'image-chips', scene + '-' + str(counter).zfill(6) + '.png')
             labelchip_filename = os.path.join(prefix, 'label-chips', scene + '-' + str(counter).zfill(6) + '.png')
+            elevachip_filename = os.path.join(prefix, 'eleva-chips', scene + '-' + str(counter).zfill(6) + '.png')
 
             with open(f"{prefix}/{dataset}", mode='a') as fd:
                 fd.write(scene + '-' + str(counter).zfill(6) + '.png\n')
 
             cv2.imwrite(orthochip_filename, orthochip)
             cv2.imwrite(labelchip_filename, classchip)
+            cv2.imwrite(elevachip_filename, elevachip)
             counter += 1
 
 
@@ -85,6 +88,8 @@ def run(prefix):
     if not os.path.exists( os.path.join(prefix, 'label-chips') ):
         os.mkdir(os.path.join(prefix, 'label-chips'))
 
+    if not os.path.exists( os.path.join(prefix, 'eleva-chips') ):
+        os.mkdir(os.path.join(prefix, 'eleva-chips'))
 
     lines = [ line for line in open(f'{prefix}/index.csv') ]
     num_images = len(lines) - 1
