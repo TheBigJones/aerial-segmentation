@@ -46,11 +46,6 @@ class BaseDataModule(pl.LightningDataModule):
         self.data_val: Union[BaseDataset, ConcatDataset]
         self.data_test: Union[BaseDataset, ConcatDataset]
 
-    @classmethod
-    def data_dirname(cls):
-        #return Path(__file__).resolve().parents[3] / "data"
-        return Path(__file__).resolve().parents[1] / "dataset-sample"
-
     @staticmethod
     def add_to_argparse(parser):
         parser.add_argument(
