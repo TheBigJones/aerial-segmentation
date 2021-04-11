@@ -6,7 +6,7 @@ import argparse
 from torch.utils.data import ConcatDataset, DataLoader
 import pytorch_lightning as pl
 
-from util_torch import BaseDataset
+from data.util_torch import BaseDataset
 
 
 def load_and_print_info(data_module_class) -> None:
@@ -17,7 +17,7 @@ def load_and_print_info(data_module_class) -> None:
     dataset = data_module_class(args)
     dataset.prepare_data()
     dataset.setup()
-    print(dataset)
+    print(dataset.data_train[0])
 
 
 BATCH_SIZE = 128

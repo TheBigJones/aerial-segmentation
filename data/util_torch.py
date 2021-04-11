@@ -9,7 +9,7 @@ SequenceOrTensor = Union[Sequence, torch.Tensor]
 
 
 def load_img(fname):
-    return np.array(Image.open(fname))
+    return np.array(Image.open(fname), dtype=float)
 
 
 class BaseDataset(torch.utils.data.Dataset):
@@ -71,7 +71,7 @@ class BaseDataset(torch.utils.data.Dataset):
         if self.return_elevation:
             target = [target, load_img(self.targets[index].replace("label-chips", "eleva-chips"))]
 
-        # Adjusted trasnformations to follow https://github.com/pytorch/vision/issues/9#issuecomment-304224800
+        # Adjusted transformations to follow https://github.com/pytorch/vision/issues/9#issuecomment-304224800
         # This is necessary to allow for the same transformations of target and datum
         seed = np.random.randint(2147483647)
         random.seed(seed) # apply this seed to img tranfsorms
