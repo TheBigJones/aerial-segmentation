@@ -38,6 +38,7 @@ class AerialData(BaseDataModule):
 
     @staticmethod
     def add_to_argparse(parser):
+        BaseDataModule.add_to_argparse(parser)
         parser.add_argument(
             "--elevation", type=bool, default=ELEVATION, help="Flag to indicate whether to use also elevation as target."
         )
