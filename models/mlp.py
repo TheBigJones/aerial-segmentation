@@ -22,7 +22,7 @@ class MLP(nn.Module):
         self.args = vars(args) if args is not None else {}
 
         input_dim = np.prod(data_config["input_dims"])
-        output_dim = data_config["mapping"]
+        self.output_dim = data_config["mapping"]
 
         fc1_dim = self.args.get("fc1", FC1_DIM)
         fc2_dim = self.args.get("fc2", FC2_DIM)
@@ -30,7 +30,7 @@ class MLP(nn.Module):
         self.dropout = nn.Dropout(0.5)
         self.fc1 = nn.Linear(input_dim, fc1_dim)
         self.fc2 = nn.Linear(fc1_dim, fc2_dim)
-        self.fc3 = nn.Linear(fc2_dim, np.product(output_dim))
+        self.fc3 = nn.Linear(fc2_dim, np.product(self.output_dim))
 
     def forward(self, x):
         x = torch.flatten(x, 1)
@@ -41,7 +41,7 @@ class MLP(nn.Module):
         x = F.relu(x)
         x = self.dropout(x)
         x = self.fc3(x)
-        x = x.view(output_dim)
+        x = x.view((-1,) + self.output_dim)
         return x
 
     @staticmethod

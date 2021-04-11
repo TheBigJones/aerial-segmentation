@@ -9,8 +9,7 @@ SequenceOrTensor = Union[Sequence, torch.Tensor]
 
 
 def load_img(fname):
-    return np.array(Image.open(fname), dtype=float)
-
+    return np.array(Image.open(fname))
 
 class BaseDataset(torch.utils.data.Dataset):
     """
@@ -44,7 +43,6 @@ class BaseDataset(torch.utils.data.Dataset):
         self.data = data
         self.targets = targets
         self.transform = transform
-        self.target_transform = target_transform
         self.return_elevation = return_eval
 
     def __len__(self) -> int:
@@ -66,25 +64,15 @@ class BaseDataset(torch.utils.data.Dataset):
 
         #datum, target = self.data[index], self.targets[index]
         datum = load_img(self.data[index])
-        target = load_img(self.targets[index])
+        target = torch.from_numpy(load_img(self.targets[index])[:,:,0])
+        elev_target = None
+        if self.return_elevation:
+            elev_target = load_img(self.targets[index].replace("label-chips", "eleva-chips"))
+
+        if self.transform is not None:
+            datum, target, elev_target = self.transform(datum, target, elev_target)
 
         if self.return_elevation:
-            target = [target, load_img(self.targets[index].replace("label-chips", "eleva-chips"))]
-
-        # Adjusted transformations to follow https://github.com/pytorch/vision/issues/9#issuecomment-304224800
-        # This is necessary to allow for the same transformations of target and datum
-        seed = np.random.randint(2147483647)
-        random.seed(seed) # apply this seed to img tranfsorms
-        torch.manual_seed(seed) # needed for torchvision 0.7
-        if self.transform is not None:
-            datum = self.transform(datum)
-
-        random.seed(seed) # apply this seed to img tranfsorms
-        torch.manual_seed(seed) # needed for torchvision 0.7
-        if self.target_transform is not None:
-            if self.return_elevation:
-                target = [self.target_transform(target[0]), self.target_transform(target[1])]
-            else:
-                target = self.target_transform(target)
-
+            return datum, target, elev_target
+            
         return datum, target

@@ -2,7 +2,9 @@
 import argparse
 
 from torch.utils.data import random_split
-from torchvision import transforms
+
+import data.transforms as transforms
+
 from data.util_torch import BaseDataset
 
 from data.base_data_module import BaseDataModule, load_and_print_info
@@ -26,7 +28,7 @@ class AerialData(BaseDataModule):
     def __init__(self, args: argparse.Namespace) -> None:
         super().__init__(args)
         #TODO normalize equal to pretrained model
-        self.transform = transforms.Compose([transforms.ToTensor()], transforms.Normalize((0.1307,), (0.3081,)))
+        self.transform = transforms.Compose([transforms.ToTensor(), transforms.Normalize((0.1307,), (0.3081,))])
         self.dims = (3, 300, 300)  # dims are returned when calling `.size()` on this object.
         #TODO output dims? 300x300x7 + seconde head?
         self.output_dims = (1,)
@@ -59,9 +61,9 @@ class AerialData(BaseDataModule):
         test_labels = [t.replace("image-chips", "label-chips") for t in test_imgs]
 
         ## TODO: check whether format is correct: Should it be [[datum, targt]] or [[datum], [target]]
-        self.data_train = BaseDataset([e for e in train_imgs], [e for e in train_labels])
-        self.data_val = BaseDataset([e for e in valid_imgs], [e for e in valid_labels])
-        self.data_test = BaseDataset([e for e in test_imgs], [e for e in test_labels])
+        self.data_train = BaseDataset([e for e in train_imgs], [e for e in train_labels], transform = self.transform)
+        self.data_val = BaseDataset([e for e in valid_imgs], [e for e in valid_labels], transform = self.transform)
+        self.data_test = BaseDataset([e for e in test_imgs], [e for e in test_labels], transform = self.transform)
 
 
 if __name__ == "__main__":
