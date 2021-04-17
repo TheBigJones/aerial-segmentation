@@ -35,7 +35,7 @@ class UnetLitModel(BaseLitModel):  # pylint: disable=too-many-ancestors
         self.train_iou = IoU(num_classes=7)
         self.val_iou = IoU(num_classes=7)
         self.test_iou = IoU(num_classes=7)
-        self.class_labels = model.class_labels 
+        self.class_labels = model.class_labels
 
     def forward(self, x):
         return self.model(x)
@@ -55,10 +55,10 @@ class UnetLitModel(BaseLitModel):  # pylint: disable=too-many-ancestors
         loss = self.loss_fn(logits, y)
 
         try:
-            original_image = np.moveaxis(x[0].numpy(),0,-1)
-            ground_truth_mask = np.moveaxis(y[0].numpy(),0,-1)
+            original_image = np.moveaxis(x[0].cpu().numpy(),0,-1)
+            ground_truth_mask = np.moveaxis(y[0].cpu().numpy(),0,-1)
             #[7,300,300] -> [1,300,300] 1 soll dim argmax
-            prediction_mask = torch.argmax(logits[0], dim=0).numpy()
+            prediction_mask = torch.argmax(logits[0], dim=0).cpu().numpy()
             self.logger.experiment.log(wandb.Image(original_image, masks={
                 "predictions" : {
                     "mask_data" : prediction_mask,
