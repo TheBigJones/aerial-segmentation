@@ -45,6 +45,7 @@ class BaseDataModule(pl.LightningDataModule):
         self.data_train: Union[BaseDataset, ConcatDataset]
         self.data_val: Union[BaseDataset, ConcatDataset]
         self.data_test: Union[BaseDataset, ConcatDataset]
+        self.class_labels: List[str, ...]
 
     @staticmethod
     def add_to_argparse(parser):
@@ -58,7 +59,7 @@ class BaseDataModule(pl.LightningDataModule):
 
     def config(self):
         """Return important settings of the dataset, which will be passed to instantiate models."""
-        return {"input_dims": self.dims, "output_dims": self.output_dims, "mapping": self.mapping}
+        return {"input_dims": self.dims, "output_dims": self.output_dims, "mapping": self.mapping, "class_labels": self.class_labels}
 
     def prepare_data(self, *args, **kwargs) -> None:
         """

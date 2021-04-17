@@ -4,3 +4,4 @@
 /venv
 /training/logs/
 .vscode/
+wandb/

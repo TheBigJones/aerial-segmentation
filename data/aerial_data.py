@@ -11,6 +11,7 @@ from data.base_data_module import BaseDataModule, load_and_print_info
 
 import os
 
+from data.config import LABELS
 
 ELEVATION = False
 DATASET = "dataset-sample"
@@ -30,11 +31,13 @@ class AerialData(BaseDataModule):
         #TODO normalize equal to pretrained model
         self.transform = transforms.Compose([transforms.ToTensor(), transforms.Normalize((0.1307,), (0.3081,))])
         self.dims = (3, 300, 300)  # dims are returned when calling `.size()` on this object.
-        #TODO output dims? 300x300x7 + seconde head?
+        #TODO output dims? 300x300x7 + second head?
         self.output_dims = (1,)
         self.mapping = (7, 300, 300)
         self.elevation = self.args.get("elevation", ELEVATION)
         self.dataset = self.args.get("dataset", DATASET)
+        # create dict {0:class1, 1:class2 ....}
+        self.class_labels = dict(zip(range(len(LABELS)),LABELS))
 
     @staticmethod
     def add_to_argparse(parser):
@@ -64,7 +67,7 @@ class AerialData(BaseDataModule):
         ## TODO: check whether format is correct: Should it be [[datum, targt]] or [[datum], [target]]
         self.data_train = BaseDataset([e for e in train_imgs], [e for e in train_labels], transform = self.transform)
         self.data_val = BaseDataset([e for e in valid_imgs], [e for e in valid_labels], transform = self.transform)
-        self.data_test = BaseDataset([e for e in test_imgs], [e for e in test_labels], transform = self.transform)
+        self.data_test = BaseDataset([e for e in test_imgs], [e for e in test_labels])
 
 
 if __name__ == "__main__":

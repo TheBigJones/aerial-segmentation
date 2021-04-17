@@ -1,6 +1,12 @@
-import argparse
 import pytorch_lightning as pl
 import torch
+import numpy as np
+
+try:
+    import wandb
+except ModuleNotFoundError:
+    pass
+
 from .base import BaseLitModel
 
 class IoU(pl.metrics.classification.IoU):
@@ -18,7 +24,6 @@ class IoU(pl.metrics.classification.IoU):
             preds = torch.nn.functional.softmax(preds, dim=1)
         super().update(preds=preds, target=target)
 
-LOSS = "cross_entropy"
 class UnetLitModel(BaseLitModel):  # pylint: disable=too-many-ancestors
     """
     Generic PyTorch-Lightning class that must be initialized with a PyTorch module.
@@ -26,31 +31,11 @@ class UnetLitModel(BaseLitModel):  # pylint: disable=too-many-ancestors
 
     def __init__(self, model, args=None):
         super().__init__(model, args)
-        loss = self.args.get("loss", LOSS)
-        if loss not in ("ctc", "transformer"):
-            self.loss_fn = getattr(torch.nn.functional, loss)
         #TODO don't hardcode num_classes
         self.train_iou = IoU(num_classes=7)
         self.val_iou = IoU(num_classes=7)
         self.test_iou = IoU(num_classes=7)
-
-    @staticmethod
-    def add_to_argparse(parser):
-        parser.add_argument("--optimizer", type=str, default=OPTIMIZER, help="optimizer class from torch.optim")
-        parser.add_argument("--lr", type=float, default=LR)
-        parser.add_argument("--one_cycle_max_lr", type=float, default=None)
-        parser.add_argument("--one_cycle_total_steps", type=int, default=ONE_CYCLE_TOTAL_STEPS)
-        parser.add_argument("--loss", type=str, default=LOSS, help="loss function from torch.nn.functional")
-        return parser
-
-    def configure_optimizers(self):
-        optimizer = self.optimizer_class(self.parameters(), lr=self.lr)
-        if self.one_cycle_max_lr is None:
-            return optimizer
-        scheduler = torch.optim.lr_scheduler.OneCycleLR(
-            optimizer=optimizer, max_lr=self.one_cycle_max_lr, total_steps=self.one_cycle_total_steps
-        )
-        return {"optimizer": optimizer, "lr_scheduler": scheduler, "monitor": "val_loss"}
+        self.class_labels = model.class_labels 
 
     def forward(self, x):
         return self.model(x)
@@ -59,7 +44,7 @@ class UnetLitModel(BaseLitModel):  # pylint: disable=too-many-ancestors
         x, y = batch
         logits = self(x)
         loss = self.loss_fn(logits, y)
-        self.log("train_loss", loss)
+        self.log("train_loss", loss, on_step=False, on_epoch=True)
         self.train_iou(logits, y)
         self.log("train_IoU", self.train_iou, on_step=False, on_epoch=True)
         return loss
@@ -68,6 +53,26 @@ class UnetLitModel(BaseLitModel):  # pylint: disable=too-many-ancestors
         x, y = batch
         logits = self(x)
         loss = self.loss_fn(logits, y)
+
+        try:
+            original_image = np.moveaxis(x[0].numpy(),0,-1)
+            ground_truth_mask = np.moveaxis(y[0].numpy(),0,-1)
+            #[7,300,300] -> [1,300,300] 1 soll dim argmax
+            prediction_mask = torch.argmax(logits[0], dim=0).numpy()
+            self.logger.experiment.log(wandb.Image(original_image, masks={
+                "predictions" : {
+                    "mask_data" : prediction_mask,
+                    "class_labels" : self.class_labels
+                },
+                "ground_truth" : {
+                    "mask_data" : ground_truth_mask,
+                    "class_labels": self.class_labels
+                }
+            }))
+        except AttributeError as e:
+            print(e)
+            pass
+
         self.log("val_loss", loss, prog_bar=True)
         self.val_iou(logits, y)
         self.log("val_iou", self.val_iou, on_step=False, on_epoch=True, prog_bar=True)

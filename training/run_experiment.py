@@ -22,6 +22,7 @@ def _import_class(module_and_class_name: str) -> type:
     class_ = getattr(module, class_name)
     return class_
 
+
 def _setup_parser():
     """Set up Python's ArgumentParser with data, model, trainer, and other arguments."""
     parser = argparse.ArgumentParser(add_help=False)
@@ -38,23 +39,17 @@ def _setup_parser():
     parser.add_argument("--data_class", type=str, default="AerialData")
     parser.add_argument("--model_class", type=str, default="MLP")
     parser.add_argument("--load_checkpoint", type=str, default=None)
-    parser.add_argument("--encoder_name", type=str, default="resnet18")
-    parser.add_argument("--encoder_weights", type=str, default="imagenet")
 
     # Get the data and model classes, so that we can add their specific arguments
     temp_args, _ = parser.parse_known_args()
     data_class = _import_class(f"data.{temp_args.data_class}")
-    if "Unet" in temp_args.model_class:
-        model_class = _import_class(f"segmentation_models_pytorch.{temp_args.model_class}")
-    else:
-        model_class = _import_class(f"models.{temp_args.model_class}")
+    model_class = _import_class(f"models.{temp_args.model_class}")
 
     # Get data, model, and LitModel specific arguments
     data_group = parser.add_argument_group("Data Args")
     data_class.add_to_argparse(data_group)
-    if not "Unet" in temp_args.model_class:
-        model_group = parser.add_argument_group("Model Args")
-        model_class.add_to_argparse(model_group)
+    model_group = parser.add_argument_group("Model Args")
+    model_class.add_to_argparse(model_group)
 
     lit_model_group = parser.add_argument_group("LitModel Args")
     lit_models.BaseLitModel.add_to_argparse(lit_model_group)
@@ -75,13 +70,8 @@ def main():
     args = parser.parse_args()
     data_class = _import_class(f"data.{args.data_class}")
     data = data_class(args)
-    if args.model_class == "Unet":
-        model_class = _import_class(f"segmentation_models_pytorch.{args.model_class}")
-        model = model_class(encoder_name=args.encoder_name, encoder_weights=args.encoder_weights,
-                            in_channels=3, classes=7)#in_channels=data.config()["input_dims"][0], classes=data.config()["mapping"][0])
-    else:
-        model_class = _import_class(f"models.{args.model_class}")
-        model = model_class(data_config=data.config(), args=args)
+    model_class = _import_class(f"models.{args.model_class}")
+    model = model_class(data_config=data.config(), args=args)
 
     if args.loss not in ("ctc", "transformer"):
         lit_model_class = lit_models.BaseLitModel
@@ -97,29 +87,33 @@ def main():
         lit_model_class = lit_models.UnetLitModel
 
     if args.load_checkpoint is not None:
-        lit_model = lit_model_class.load_from_checkpoint(args.load_checkpoint, args=args, model=model)
+        lit_model = lit_model_class.load_from_checkpoint(
+            args.load_checkpoint, args=args, model=model)
     else:
         lit_model = lit_model_class(args=args, model=model)
 
     logger = pl.loggers.TensorBoardLogger("training/logs")
     # Hide lines below until Lab 5
     if args.wandb:
-        logger = pl.loggers.WandbLogger()
+        logger = pl.loggers.WandbLogger(project='aerialsegmenation', entity='team_jf')
         logger.watch(model)
         logger.log_hyperparams(vars(args))
     # Hide lines above until Lab 5
 
-    early_stopping_callback = pl.callbacks.EarlyStopping(monitor="val_loss", mode="min", patience=10)
+    early_stopping_callback = pl.callbacks.EarlyStopping(
+        monitor="val_loss", mode="min", patience=10)
     model_checkpoint_callback = pl.callbacks.ModelCheckpoint(
         filename="{epoch:03d}-{val_loss:.3f}-{val_cer:.3f}", monitor="val_loss", mode="min"
     )
     callbacks = [early_stopping_callback, model_checkpoint_callback]
 
     args.weights_summary = "full"  # Print full summary of the model
-    trainer = pl.Trainer.from_argparse_args(args, callbacks=callbacks, logger=logger, weights_save_path="training/logs")
+    trainer = pl.Trainer.from_argparse_args(
+        args, callbacks=callbacks, logger=logger, weights_save_path="training/logs")
 
     # pylint: disable=no-member
-    trainer.tune(lit_model, datamodule=data)  # If passing --auto_lr_find, this will set learning rate
+    # If passing --auto_lr_find, this will set learning rate
+    trainer.tune(lit_model, datamodule=data)
 
     trainer.fit(lit_model, datamodule=data)
     trainer.test(lit_model, datamodule=data)
