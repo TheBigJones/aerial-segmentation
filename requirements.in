@@ -6,3 +6,4 @@ wandb
 numpy
 scipy
 opencv-python
+segmentation-models-pytorch

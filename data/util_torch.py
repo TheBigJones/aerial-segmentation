@@ -8,8 +8,10 @@ import random
 SequenceOrTensor = Union[Sequence, torch.Tensor]
 
 
-def load_img(fname):
-    return np.array(Image.open(fname))
+def load_img(fname, shape):
+    image = Image.open(fname)
+    image = image.resize(shape)
+    return np.array(image)
 
 class BaseDataset(torch.utils.data.Dataset):
     """
@@ -36,6 +38,7 @@ class BaseDataset(torch.utils.data.Dataset):
         transform: Callable = None,
         target_transform: Callable = None,
         return_eval: bool = False,
+        shape: int = (288,288),
     ) -> None:
         if len(data) != len(targets):
             raise ValueError("Data and targets must be of equal length")
@@ -44,6 +47,7 @@ class BaseDataset(torch.utils.data.Dataset):
         self.targets = targets
         self.transform = transform
         self.return_elevation = return_eval
+        self.shape = shape
 
     def __len__(self) -> int:
         """Return length of the dataset."""
@@ -63,11 +67,11 @@ class BaseDataset(torch.utils.data.Dataset):
         """
 
         #datum, target = self.data[index], self.targets[index]
-        datum = load_img(self.data[index])
-        target = torch.from_numpy(load_img(self.targets[index])[:,:,0])
+        datum = load_img(self.data[index],self.shape)
+        target = torch.from_numpy(load_img(self.targets[index],self.shape)[:,:,0])
         elev_target = None
         if self.return_elevation:
-            elev_target = load_img(self.targets[index].replace("label-chips", "eleva-chips"))
+            elev_target = load_img(self.targets[index].replace("label-chips", "eleva-chips"), self.shape)
 
         if self.transform is not None:
             datum, target, elev_target = self.transform(datum, target, elev_target)

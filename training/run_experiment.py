@@ -22,7 +22,6 @@ def _import_class(module_and_class_name: str) -> type:
     class_ = getattr(module, class_name)
     return class_
 
-
 def _setup_parser():
     """Set up Python's ArgumentParser with data, model, trainer, and other arguments."""
     parser = argparse.ArgumentParser(add_help=False)
@@ -39,18 +38,23 @@ def _setup_parser():
     parser.add_argument("--data_class", type=str, default="AerialData")
     parser.add_argument("--model_class", type=str, default="MLP")
     parser.add_argument("--load_checkpoint", type=str, default=None)
+    parser.add_argument("--encoder_name", type=str, default="resnet18")
+    parser.add_argument("--encoder_weights", type=str, default="imagenet")
 
     # Get the data and model classes, so that we can add their specific arguments
     temp_args, _ = parser.parse_known_args()
     data_class = _import_class(f"data.{temp_args.data_class}")
-    model_class = _import_class(f"models.{temp_args.model_class}")
+    if "Unet" in temp_args.model_class:
+        model_class = _import_class(f"segmentation_models_pytorch.{temp_args.model_class}")
+    else:
+        model_class = _import_class(f"models.{temp_args.model_class}")
 
     # Get data, model, and LitModel specific arguments
     data_group = parser.add_argument_group("Data Args")
     data_class.add_to_argparse(data_group)
-
-    model_group = parser.add_argument_group("Model Args")
-    model_class.add_to_argparse(model_group)
+    if not "Unet" in temp_args.model_class:
+        model_group = parser.add_argument_group("Model Args")
+        model_class.add_to_argparse(model_group)
 
     lit_model_group = parser.add_argument_group("LitModel Args")
     lit_models.BaseLitModel.add_to_argparse(lit_model_group)
@@ -70,9 +74,14 @@ def main():
     parser = _setup_parser()
     args = parser.parse_args()
     data_class = _import_class(f"data.{args.data_class}")
-    model_class = _import_class(f"models.{args.model_class}")
     data = data_class(args)
-    model = model_class(data_config=data.config(), args=args)
+    if args.model_class == "Unet":
+        model_class = _import_class(f"segmentation_models_pytorch.{args.model_class}")
+        model = model_class(encoder_name=args.encoder_name, encoder_weights=args.encoder_weights,
+                            in_channels=3, classes=7)#in_channels=data.config()["input_dims"][0], classes=data.config()["mapping"][0])
+    else:
+        model_class = _import_class(f"models.{args.model_class}")
+        model = model_class(data_config=data.config(), args=args)
 
     if args.loss not in ("ctc", "transformer"):
         lit_model_class = lit_models.BaseLitModel
@@ -84,6 +93,8 @@ def main():
     if args.loss == "transformer":
         lit_model_class = lit_models.TransformerLitModel
     # Hide lines above until Lab 4
+    if args.model_class == "Unet":
+        lit_model_class = lit_models.UnetLitModel
 
     if args.load_checkpoint is not None:
         lit_model = lit_model_class.load_from_checkpoint(args.load_checkpoint, args=args, model=model)

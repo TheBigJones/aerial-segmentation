@@ -20,8 +20,8 @@ def load_and_print_info(data_module_class) -> None:
     print(dataset.data_train[0])
 
 
-BATCH_SIZE = 128
-NUM_WORKERS = 0
+BATCH_SIZE = 8
+NUM_WORKERS = 12
 
 
 class BaseDataModule(pl.LightningDataModule):
