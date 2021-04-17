@@ -23,6 +23,7 @@ class MLP(nn.Module):
 
         input_dim = np.prod(data_config["input_dims"])
         self.output_dim = data_config["mapping"]
+        self.class_labels = data_config["class_labels"]
 
         fc1_dim = self.args.get("fc1", FC1_DIM)
         fc2_dim = self.args.get("fc2", FC2_DIM)
