@@ -30,6 +30,8 @@ configparser==5.0.2
     # via wandb
 docker-pycreds==0.4.0
     # via wandb
+efficientnet-pytorch==0.6.3
+    # via segmentation-models-pytorch
 fsspec[http]==0.9.0
     # via pytorch-lightning
 future==0.18.2
@@ -56,6 +58,8 @@ multidict==5.1.0
     # via
     #   aiohttp
     #   yarl
+munch==2.5.0
+    # via pretrainedmodels
 numpy==1.20.2
     # via
     #   -r requirements.in
@@ -77,6 +81,8 @@ pillow==8.2.0
     # via torchvision
 pip-tools==6.0.1
     # via -r requirements.in
+pretrainedmodels==0.7.4
+    # via segmentation-models-pytorch
 promise==2.3
     # via wandb
 protobuf==3.15.7
@@ -111,6 +117,8 @@ rsa==4.7.2
     # via google-auth
 scipy==1.6.2
     # via -r requirements.in
+segmentation-models-pytorch==0.1.3
+    # via -r requirements.in
 sentry-sdk==1.0.0
     # via wandb
 shortuuid==1.0.1
@@ -121,6 +129,7 @@ six==1.15.0
     #   docker-pycreds
     #   google-auth
     #   grpcio
+    #   munch
     #   promise
     #   protobuf
     #   python-dateutil
@@ -134,20 +143,31 @@ tensorboard-plugin-wit==1.8.0
     # via tensorboard
 tensorboard==2.4.1
     # via pytorch-lightning
+timm==0.3.2
+    # via segmentation-models-pytorch
 toml==0.10.2
     # via pep517
 torch==1.8.1
     # via
     #   -r requirements.in
+    #   efficientnet-pytorch
+    #   pretrainedmodels
     #   pytorch-lightning
+    #   timm
     #   torchmetrics
     #   torchvision
 torchmetrics==0.2.0
     # via pytorch-lightning
 torchvision==0.9.1
-    # via -r requirements.in
+    # via
+    #   -r requirements.in
+    #   pretrainedmodels
+    #   segmentation-models-pytorch
+    #   timm
 tqdm==4.60.0
-    # via pytorch-lightning
+    # via
+    #   pretrainedmodels
+    #   pytorch-lightning
 typing-extensions==3.7.4.3
     # via
     #   aiohttp
