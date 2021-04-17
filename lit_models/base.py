@@ -46,6 +46,7 @@ class BaseLitModel(pl.LightningModule):  # pylint: disable=too-many-ancestors
 
         self.one_cycle_max_lr = self.args.get("one_cycle_max_lr", None)
         self.one_cycle_total_steps = self.args.get("one_cycle_total_steps", ONE_CYCLE_TOTAL_STEPS)
+        self.mask_loss = self.args.get("mask_loss", False)
 
         self.train_acc = Accuracy()
         self.val_acc = Accuracy()
@@ -58,6 +59,7 @@ class BaseLitModel(pl.LightningModule):  # pylint: disable=too-many-ancestors
         parser.add_argument("--one_cycle_max_lr", type=float, default=None)
         parser.add_argument("--one_cycle_total_steps", type=int, default=ONE_CYCLE_TOTAL_STEPS)
         parser.add_argument("--loss", type=str, default=LOSS, help="loss function from torch.nn.functional")
+        parser.add_argument("--mask_loss", action="store_true", default=False, help="masks ignores from target in lass-calculation")
         return parser
 
     def configure_optimizers(self):
