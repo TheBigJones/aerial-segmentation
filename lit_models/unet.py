@@ -35,15 +35,16 @@ class UnetLitModel(BaseLitModel):  # pylint: disable=too-many-ancestors
         self.train_iou = IoU(num_classes=7)
         self.val_iou = IoU(num_classes=7)
         self.test_iou = IoU(num_classes=7)
-        self.class_labels = model.class_labels
 
     def forward(self, x):
         return self.model(x)
 
+
     def training_step(self, batch, batch_idx):  # pylint: disable=unused-argument
         x, y = batch
         logits = self(x)
-        loss = self.loss_fn(logits, y)
+        loss = self.calc_loss(logits, y)
+
         self.log("train_loss", loss, on_step=False, on_epoch=True)
         self.train_iou(logits, y)
         self.log("train_IoU", self.train_iou, on_step=False, on_epoch=True)
@@ -52,7 +53,7 @@ class UnetLitModel(BaseLitModel):  # pylint: disable=too-many-ancestors
     def validation_step(self, batch, batch_idx):  # pylint: disable=unused-argument
         x, y = batch
         logits = self(x)
-        loss = self.loss_fn(logits, y)
+        loss = self.calc_loss(logits, y)
 
         try:
             original_image = np.moveaxis(x[0].cpu().numpy(),0,-1)
