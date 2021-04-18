@@ -29,6 +29,8 @@ class UnetLitModel(BaseLitModel):  # pylint: disable=too-many-ancestors
         self.log("train_loss", loss, on_step=False, on_epoch=True)
         self.train_iou(logits, y)
         self.log("train_IoU", self.train_iou, on_step=False, on_epoch=True)
+        self.train_acc(logits, y)
+        self.log("train_acc", self.train_acc, on_step=False, on_epoch=True)
         return loss
 
     def validation_step(self, batch, batch_idx):  # pylint: disable=unused-argument
@@ -40,6 +42,8 @@ class UnetLitModel(BaseLitModel):  # pylint: disable=too-many-ancestors
         self.val_iou(logits, y)
         self.log("val_iou", self.val_iou, on_step=False,
                  on_epoch=True, prog_bar=True)
+        self.val_acc(logits, y)
+        self.log("val_acc", self.val_acc, on_step=False, on_epoch=True, prog_bar=True)
         return {'x' : x[0], 'y' : y[0], 'logits' : logits[0]}
 
     def validation_epoch_end(self, validation_step_outputs):
@@ -67,9 +71,11 @@ class UnetLitModel(BaseLitModel):  # pylint: disable=too-many-ancestors
             self.logger.experiment.log({"predictions": wandb_images})
         except AttributeError as e:
                 pass
-            
+
     def test_step(self, batch, batch_idx):  # pylint: disable=unused-argument
         x, y = batch
         logits = self(x)
         self.test_iou(logits, y)
         self.log("test_iou", self.test_iou, on_step=False, on_epoch=True)
+        self.test_acc(logits, y)
+        self.log("test_acc", self.test_acc, on_step=False, on_epoch=True)

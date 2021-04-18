@@ -21,7 +21,7 @@ class Accuracy(pl.metrics.Accuracy):
         Normalized preds are not necessary for accuracy computation as we just care about argmax().
         """
         if preds.min() < 0 or preds.max() > 1:
-            preds = torch.nn.functional.softmax(preds, dim=-1)
+            preds = torch.nn.functional.softmax(preds, dim=1)
         super().update(preds=preds, target=target)
 
 
@@ -111,8 +111,8 @@ class BaseLitModel(pl.LightningModule):  # pylint: disable=too-many-ancestors
         logits = self(x)
         loss = self.calc_loss(logits, y)
         self.log("train_loss", loss)
-        # self.train_acc(logits, y)
-        # self.log("train_acc", self.train_acc, on_step=False, on_epoch=True)
+        self.train_acc(logits, y)
+        self.log("train_acc", self.train_acc, on_step=False, on_epoch=True)
         return loss
 
     def validation_step(self, batch, batch_idx):  # pylint: disable=unused-argument
@@ -120,11 +120,11 @@ class BaseLitModel(pl.LightningModule):  # pylint: disable=too-many-ancestors
         logits = self(x)
         loss = self.calc_loss(logits, y)
         self.log("val_loss", loss, prog_bar=True)
-        #self.val_acc(logits, y)
-        #self.log("val_acc", self.val_acc, on_step=False, on_epoch=True, prog_bar=True)
+        self.val_acc(logits, y)
+        self.log("val_acc", self.val_acc, on_step=False, on_epoch=True, prog_bar=True)
 
     def test_step(self, batch, batch_idx):  # pylint: disable=unused-argument
         x, y = batch
         logits = self(x)
-        # self.test_acc(logits, y)
-        # self.log("test_acc", self.test_acc, on_step=False, on_epoch=True)
+        self.test_acc(logits, y)
+        self.log("test_acc", self.test_acc, on_step=False, on_epoch=True)
