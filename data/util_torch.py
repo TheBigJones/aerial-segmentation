@@ -14,6 +14,12 @@ def load_img(fname, shape):
     image = np.transpose(np.array(image), (1,0,2))
     return image
 
+def load_mask(fname, shape):
+    mask = Image.open(fname)
+    mask = mask.resize(shape, Image.NEAREST)
+    mask = np.transpose(np.array(mask), (1,0,2))
+    return mask
+
 class BaseDataset(torch.utils.data.Dataset):
     """
     Base Dataset class that simply processes data and targets through optional transforms.
@@ -69,7 +75,7 @@ class BaseDataset(torch.utils.data.Dataset):
 
         #datum, target = self.data[index], self.targets[index]
         datum = load_img(self.data[index],self.shape)
-        target = load_img(self.targets[index],self.shape)[:,:,0]
+        target = load_mask(self.targets[index],self.shape)[:,:,0]
         elev_target = None
         if self.return_elevation:
             elev_target = load_img(self.targets[index].replace("label-chips", "eleva-chips"), self.shape)
