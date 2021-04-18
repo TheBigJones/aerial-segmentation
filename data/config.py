@@ -1,5 +1,5 @@
 # 'ignore' was added, not in original labels
-LABELS = ['IGNORE', 'BUILDING', 'CLUTTER', 'VEGETATION', 'WATER', 'GROUND', 'CAR']
+LABELS = ['BUILDING', 'CLUTTER', 'VEGETATION', 'WATER', 'GROUND', 'CAR']
 
 # Class to color (BGR)
 LABELMAP = {
