@@ -1,0 +1,27 @@
+command:
+  - ${env}
+  - ${interpreter}
+  - ${program}
+  - "--wandb"
+  - ${args}
+program: training/run_experiment.py
+method: random
+metric:
+  goal: minimize
+  name: val_loss
+early_terminate:
+  type: hyperband
+  min_iter: 20
+parameters:
+  lr:
+    values: [0.01, 0.001, 0.0003]
+  gpus:
+    value: -1
+  data_class:
+    value: AerialData
+  model_class:
+    value: Unet
+  loss:
+    value: cross_entropy
+  precision:
+    value: 16
