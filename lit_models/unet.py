@@ -31,10 +31,9 @@ class UnetLitModel(BaseLitModel):  # pylint: disable=too-many-ancestors
 
     def __init__(self, model, args=None):
         super().__init__(model, args)
-        #TODO don't hardcode num_classes
-        self.train_iou = IoU(num_classes=7)
-        self.val_iou = IoU(num_classes=7)
-        self.test_iou = IoU(num_classes=7)
+        self.train_iou = IoU(num_classes=len(model.class_labels))
+        self.val_iou = IoU(num_classes=len(model.class_labels))
+        self.test_iou = IoU(num_classes=len(model.class_labels))
 
     def forward(self, x):
         return self.model(x)
