@@ -40,15 +40,21 @@ class BaseLitModel(pl.LightningModule):  # pylint: disable=too-many-ancestors
 
         self.lr = self.args.get("lr", LR)
 
-        loss = self.args.get("loss", LOSS)
-        if loss not in ("ctc", "transformer"):
-            self.loss_fn = getattr(torch.nn.functional, loss)
-
         self.one_cycle_max_lr = self.args.get("one_cycle_max_lr", None)
         self.one_cycle_total_steps = self.args.get("one_cycle_total_steps", ONE_CYCLE_TOTAL_STEPS)
         self.mask_loss = self.args.get("mask_loss", False)
 
         self.class_labels = model.class_labels
+        self.num_classes = len(self.class_labels)
+
+        self.loss_weights = torch.ones(self.num_classes)
+        if self.mask_loss:
+            self.loss_weights[0] = 0.
+
+        loss = self.args.get("loss", LOSS)
+        if loss not in ("ctc", "transformer"):
+            self.loss_fn = getattr(torch.nn.functional, loss)
+            self.loss_fn.__init__(weight=self.loss_weights)
 
         self.train_acc = Accuracy()
         self.val_acc = Accuracy()
@@ -77,12 +83,6 @@ class BaseLitModel(pl.LightningModule):  # pylint: disable=too-many-ancestors
         return self.model(x)
 
     def calc_loss(self, logits, y):
-        if self.mask_loss:
-            #mask = y.clone().detach().bool().int().float()
-            mask = (y == 0)
-            for i in range(1, len(self.class_labels.keys())):
-                logits[:,i,:,:][mask] = 0
-
         loss = self.loss_fn(logits, y)
         return loss
 
