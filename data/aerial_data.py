@@ -29,7 +29,7 @@ class AerialData(BaseDataModule):
     def __init__(self, args: argparse.Namespace) -> None:
         super().__init__(args)
         #TODO normalize equal to pretrained model
-        self.transform = transforms.Compose([transforms.ToTensor()]), transforms.Normalize(mean=[0.485, 0.456, 0.406],
+        self.transform = transforms.Compose([transforms.ToTensor(), transforms.Normalize(mean=[0.485, 0.456, 0.406],
                                                                                            std=[0.229, 0.224, 0.225])])
         self.dims = (3, self.image_size, self.image_size)  # dims are returned when calling `.size()` on this object.
         # create dict {0:class1, 1:class2 ....}
@@ -38,8 +38,8 @@ class AerialData(BaseDataModule):
         self.mapping = (len(self.class_labels), self.image_size, self.image_size)
         self.elevation = self.args.get("elevation", ELEVATION)
         self.dataset = self.args.get("dataset", DATASET)
-        
-        
+
+
 
     @staticmethod
     def add_to_argparse(parser):
