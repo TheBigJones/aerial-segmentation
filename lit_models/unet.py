@@ -44,29 +44,30 @@ class UnetLitModel(BaseLitModel):  # pylint: disable=too-many-ancestors
 
     def validation_epoch_end(self, validation_step_outputs):
         wandb_images = []
-        for out in validation_step_outputs:
-            try:
-                original_image = np.moveaxis(out['x'].cpu().numpy(), 0, -1)
-                ground_truth_mask = out['y'].cpu().numpy()
-                # [7,300,300] -> [1,300,300] 1 soll dim argmax
-                prediction_mask = torch.argmax(out['logits'], dim=0).cpu().numpy()
-                wandb_image = wandb.Image(original_image, masks={
-                    "predictions": {
-                        "mask_data": prediction_mask,
-                        "class_labels": self.class_labels
-                    },
-                    "ground_truth": {
-                        "mask_data": ground_truth_mask,
-                        "class_labels": self.class_labels
-                    }
-                })
-                wandb_images.append(wandb_image)
+        try:
+            for out in validation_step_outputs:
+                
+                    original_image = np.moveaxis(out['x'].cpu().numpy(), 0, -1)
+                    ground_truth_mask = out['y'].cpu().numpy()
+                    # [7,300,300] -> [1,300,300] 1 soll dim argmax
+                    prediction_mask = torch.argmax(out['logits'], dim=0).cpu().numpy()
+                    wandb_image = wandb.Image(original_image, masks={
+                        "predictions": {
+                            "mask_data": prediction_mask,
+                            "class_labels": self.class_labels
+                        },
+                        "ground_truth": {
+                            "mask_data": ground_truth_mask,
+                            "class_labels": self.class_labels
+                        }
+                    })
+                    wandb_images.append(wandb_image)
 
-            except AttributeError as e:
-                print(e)
+                
+            self.logger.experiment.log({"predictions": wandb_images})
+        except AttributeError as e:
                 pass
-        self.logger.experiment.log({"predictions": wandb_images})
-
+            
     def test_step(self, batch, batch_idx):  # pylint: disable=unused-argument
         x, y = batch
         logits = self(x)
