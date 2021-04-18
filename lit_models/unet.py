@@ -17,9 +17,12 @@ class UnetLitModel(BaseLitModel):  # pylint: disable=too-many-ancestors
 
     def __init__(self, model, args=None):
         super().__init__(model, args)
-        self.train_iou = IoU(num_classes=self.num_classes)
-        self.val_iou = IoU(num_classes=self.num_classes)
-        self.test_iou = IoU(num_classes=self.num_classes)
+        ignore_index = None
+        if self.mask_loss:
+            ignore_index = [k for k in self.class_labels.keys() if self.class_labels[k] == "IGNORE"][0]
+        self.train_iou = IoU(num_classes=self.num_classes, ignore_index = ignore_index)
+        self.val_iou = IoU(num_classes=self.num_classes, ignore_index = ignore_index)
+        self.test_iou = IoU(num_classes=self.num_classes, ignore_index = ignore_index)
 
     def training_step(self, batch, batch_idx):  # pylint: disable=unused-argument
         x, y = batch
@@ -60,7 +63,7 @@ class UnetLitModel(BaseLitModel):  # pylint: disable=too-many-ancestors
                         "class_labels": self.class_labels
                     }
                 }))
-                
+
             except AttributeError as e:
                 print(e)
                 pass
