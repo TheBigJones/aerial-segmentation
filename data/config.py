@@ -1,4 +1,3 @@
-# 'ignore' was added, not in original labels
 LABELS = ['BUILDING', 'CLUTTER', 'VEGETATION', 'WATER', 'GROUND', 'CAR']
 
 # Class to color (BGR)
