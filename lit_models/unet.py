@@ -36,13 +36,12 @@ class UnetLitModel(BaseLitModel):  # pylint: disable=too-many-ancestors
         x, y = batch
         logits = self(x)
         loss = self.calc_loss(logits, y)
-
         try:
             original_image = np.moveaxis(x[0].cpu().numpy(),0,-1)
             ground_truth_mask = np.moveaxis(y[0].cpu().numpy(),0,-1)
             #[7,300,300] -> [1,300,300] 1 soll dim argmax
             prediction_mask = torch.argmax(logits[0], dim=0).cpu().numpy()
-            self.logger.experiment.log(wandb.Image(original_image, masks={
+            wandb_image = wandb.Image(original_image, masks={
                 "predictions" : {
                     "mask_data" : prediction_mask,
                     "class_labels" : self.class_labels
@@ -51,14 +50,22 @@ class UnetLitModel(BaseLitModel):  # pylint: disable=too-many-ancestors
                     "mask_data" : ground_truth_mask,
                     "class_labels": self.class_labels
                 }
-            }))
+            })
         except AttributeError as e:
             print(e)
             pass
-
         self.log("val_loss", loss, prog_bar=True)
         self.val_iou(logits, y)
         self.log("val_iou", self.val_iou, on_step=False, on_epoch=True, prog_bar=True)
+        return {'wandb_image' : wandb_image}
+
+    def validation_epoch_end(self, validation_step_outputs):
+        wandb_images = []
+        for out in validation_step_outputs:
+            wandb_images.append(out["wandb_image"])
+        
+        self.logger.experiment.log({"predictions": wandb_images})
+            
 
     def test_step(self, batch, batch_idx):  # pylint: disable=unused-argument
         x, y = batch
