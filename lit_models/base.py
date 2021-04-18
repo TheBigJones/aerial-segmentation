@@ -25,6 +25,22 @@ class Accuracy(pl.metrics.Accuracy):
         super().update(preds=preds, target=target)
 
 
+class IoU(pl.metrics.classification.IoU):
+    """IoU Metric with a hack."""
+
+    def update(self, preds: torch.Tensor, target: torch.Tensor) -> None:
+        """
+        Metrics in Pytorch-lightning 1.2+ versions expect preds to be between 0 and 1 else fails with the ValueError:
+        "The `preds` should be probabilities, but values were detected outside of [0,1] range."
+        This is being tracked as a bug in https://github.com/PyTorchLightning/metrics/issues/60.
+        This method just hacks around it by normalizing preds before passing it in.
+        Normalized preds are not necessary for accuracy computation as we just care about argmax().
+        """
+        if preds.min() < 0 or preds.max() > 1:
+            preds = torch.nn.functional.softmax(preds, dim=1)
+        super().update(preds=preds, target=target)
+
+
 class BaseLitModel(pl.LightningModule):  # pylint: disable=too-many-ancestors
     """
     Generic PyTorch-Lightning class that must be initialized with a PyTorch module.
