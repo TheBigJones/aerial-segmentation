@@ -17,12 +17,9 @@ class UnetLitModel(BaseLitModel):  # pylint: disable=too-many-ancestors
 
     def __init__(self, model, args=None):
         super().__init__(model, args)
-        ignore_index = None
-        if self.mask_loss:
-            ignore_index = [k for k in self.class_labels.keys() if self.class_labels[k] == "IGNORE"][0]
-        self.train_iou = IoU(num_classes=self.num_classes, ignore_index = ignore_index)
-        self.val_iou = IoU(num_classes=self.num_classes, ignore_index = ignore_index)
-        self.test_iou = IoU(num_classes=self.num_classes, ignore_index = ignore_index)
+        self.train_iou = IoU(num_classes=self.num_classes, ignore_index = self.ignore_index)
+        self.val_iou = IoU(num_classes=self.num_classes, ignore_index = self.ignore_index)
+        self.test_iou = IoU(num_classes=self.num_classes, ignore_index = self.ignore_index)
 
     def training_step(self, batch, batch_idx):  # pylint: disable=unused-argument
         x, y = batch
@@ -53,7 +50,7 @@ class UnetLitModel(BaseLitModel):  # pylint: disable=too-many-ancestors
                 ground_truth_mask = out['y'].cpu().numpy()
                 # [7,300,300] -> [1,300,300] 1 soll dim argmax
                 prediction_mask = torch.argmax(out['logits'], dim=0).cpu().numpy()
-                wandb_images.append(wandb.Image(original_image, masks={
+                wandb_image = wandb.Image(original_image, masks={
                     "predictions": {
                         "mask_data": prediction_mask,
                         "class_labels": self.class_labels
@@ -62,7 +59,8 @@ class UnetLitModel(BaseLitModel):  # pylint: disable=too-many-ancestors
                         "mask_data": ground_truth_mask,
                         "class_labels": self.class_labels
                     }
-                }))
+                })
+                wandb_images.append(wandb_image)
 
             except AttributeError as e:
                 print(e)

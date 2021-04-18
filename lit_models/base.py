@@ -63,9 +63,13 @@ class BaseLitModel(pl.LightningModule):  # pylint: disable=too-many-ancestors
         self.class_labels = model.class_labels
         self.num_classes = len(self.class_labels)
 
+        self.ignore_index = None
+        if self.mask_loss:
+            self.ignore_index = [k for k in self.class_labels.keys() if self.class_labels[k] == "IGNORE"][0]
+
         self.loss_weights = torch.ones(self.num_classes)
         if self.mask_loss:
-            self.loss_weights[0] = 0.
+            self.loss_weights[self.ignore_index] = 0.
 
         loss = self.args.get("loss", LOSS)
         if loss not in ("ctc", "transformer"):
