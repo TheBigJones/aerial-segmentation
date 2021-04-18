@@ -11,7 +11,8 @@ SequenceOrTensor = Union[Sequence, torch.Tensor]
 def load_img(fname, shape):
     image = Image.open(fname)
     image = image.resize(shape)
-    return np.array(image)
+    image = np.transpose(np.array(image), (1,0,2))
+    return image
 
 class BaseDataset(torch.utils.data.Dataset):
     """
@@ -68,7 +69,7 @@ class BaseDataset(torch.utils.data.Dataset):
 
         #datum, target = self.data[index], self.targets[index]
         datum = load_img(self.data[index],self.shape)
-        target = torch.from_numpy(load_img(self.targets[index],self.shape)[:,:,0])
+        target = load_img(self.targets[index],self.shape)[:,:,0]
         elev_target = None
         if self.return_elevation:
             elev_target = load_img(self.targets[index].replace("label-chips", "eleva-chips"), self.shape)
