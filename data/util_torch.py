@@ -35,10 +35,10 @@ class BaseDataset(torch.utils.data.Dataset):
         self,
         data: SequenceOrTensor,
         targets: SequenceOrTensor,
+        shape: Tuple,
         transform: Callable = None,
         target_transform: Callable = None,
         return_eval: bool = False,
-        shape: int = (288,288),
     ) -> None:
         if len(data) != len(targets):
             raise ValueError("Data and targets must be of equal length")
@@ -78,5 +78,5 @@ class BaseDataset(torch.utils.data.Dataset):
 
         if self.return_elevation:
             return datum, target, elev_target
-            
+
         return datum, target
