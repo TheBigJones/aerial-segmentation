@@ -22,6 +22,7 @@ def load_and_print_info(data_module_class) -> None:
 
 BATCH_SIZE = 8
 NUM_WORKERS = 12
+IMAGE_SIZE=288
 
 
 class BaseDataModule(pl.LightningDataModule):
@@ -35,6 +36,7 @@ class BaseDataModule(pl.LightningDataModule):
         self.args = vars(args) if args is not None else {}
         self.batch_size = self.args.get("batch_size", BATCH_SIZE)
         self.num_workers = self.args.get("num_workers", NUM_WORKERS)
+        self.image_size = self.args.get("image_size", IMAGE_SIZE)
 
         self.on_gpu = isinstance(self.args.get("gpus", None), (str, int))
 
@@ -54,6 +56,9 @@ class BaseDataModule(pl.LightningDataModule):
         )
         parser.add_argument(
             "--num_workers", type=int, default=NUM_WORKERS, help="Number of additional processes to load data."
+        )
+        parser.add_argument(
+            "--image_size", type=int, default=IMAGE_SIZE, help="Size of input images to resize to."
         )
         return parser
 
