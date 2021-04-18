@@ -5,3 +5,4 @@
 /training/logs/
 .vscode/
 wandb/
+notebooks/
