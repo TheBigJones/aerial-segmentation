@@ -47,7 +47,7 @@ class BaseDataModule(pl.LightningDataModule):
         self.data_train: Union[BaseDataset, ConcatDataset]
         self.data_val: Union[BaseDataset, ConcatDataset]
         self.data_test: Union[BaseDataset, ConcatDataset]
-        self.class_labels: List[str, ...]
+        self.class_labels: Dict
 
     @staticmethod
     def add_to_argparse(parser):
