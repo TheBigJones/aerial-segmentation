@@ -39,6 +39,7 @@ def _setup_parser():
     parser.add_argument("--data_class", type=str, default="AerialData")
     parser.add_argument("--model_class", type=str, default="MLP")
     parser.add_argument("--load_checkpoint", type=str, default=None)
+    parser.add_argument("--enable_test", action="store_true", default=False)
 
     # Get the data and model classes, so that we can add their specific arguments
     temp_args, _ = parser.parse_known_args()
@@ -72,6 +73,8 @@ def main():
     data = data_class(args)
     model_class = _import_class(f"models.{args.model_class}")
     model = model_class(data_config=data.config(), args=args)
+
+    enable_test = vars(args).get("enable_test", False)
 
     if args.loss not in ("ctc", "transformer"):
         lit_model_class = lit_models.BaseLitModel
@@ -116,7 +119,8 @@ def main():
     trainer.tune(lit_model, datamodule=data)
 
     trainer.fit(lit_model, datamodule=data)
-    trainer.test(lit_model, datamodule=data)
+    if enable_test:
+        trainer.test(lit_model, datamodule=data)
     # pylint: enable=no-member
 
     # Hide lines below until Lab 5
