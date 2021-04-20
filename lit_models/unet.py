@@ -7,7 +7,7 @@ try:
 except ModuleNotFoundError:
     pass
 
-from .base import BaseLitModel, IoU
+from .base import BaseLitModel, IoU, F1
 
 
 class UnetLitModel(BaseLitModel):  # pylint: disable=too-many-ancestors
@@ -21,6 +21,10 @@ class UnetLitModel(BaseLitModel):  # pylint: disable=too-many-ancestors
         self.val_iou = IoU(num_classes=self.num_classes, ignore_index = self.ignore_index)
         self.test_iou = IoU(num_classes=self.num_classes, ignore_index = self.ignore_index)
 
+        self.train_f1 = F1(num_classes=self.num_classes)
+        self.val_f1 = F1(num_classes=self.num_classes)
+        self.test_f1 = F1(num_classes=self.num_classes)
+
     def training_step(self, batch, batch_idx):  # pylint: disable=unused-argument
         x, y = batch
         logits = self(x)
@@ -29,6 +33,8 @@ class UnetLitModel(BaseLitModel):  # pylint: disable=too-many-ancestors
         self.log("train_loss", loss, on_step=False, on_epoch=True)
         self.train_iou(logits, y)
         self.log("train_IoU", self.train_iou, on_step=False, on_epoch=True)
+        self.train_f1(logits, y)
+        self.log("train_f1", self.train_f1, on_step=False, on_epoch=True)
         self.train_acc(logits, y)
         self.log("train_acc", self.train_acc, on_step=False, on_epoch=True)
         return loss
@@ -42,6 +48,8 @@ class UnetLitModel(BaseLitModel):  # pylint: disable=too-many-ancestors
         self.val_iou(logits, y)
         self.log("val_iou", self.val_iou, on_step=False,
                  on_epoch=True, prog_bar=True)
+        self.val_f1(logits, y)
+        self.log("val_f1", self.val_f1, on_step=False, on_epoch=True)
         self.val_acc(logits, y)
         self.log("val_acc", self.val_acc, on_step=False, on_epoch=True, prog_bar=True)
         return {'x' : x[0], 'y' : y[0], 'logits' : logits[0]}
@@ -50,7 +58,7 @@ class UnetLitModel(BaseLitModel):  # pylint: disable=too-many-ancestors
         wandb_images = []
         try:
             for out in validation_step_outputs:
-                
+
                     original_image = np.moveaxis(out['x'].cpu().numpy(), 0, -1)
                     ground_truth_mask = out['y'].cpu().numpy()
                     # [7,300,300] -> [1,300,300] 1 soll dim argmax
@@ -67,7 +75,7 @@ class UnetLitModel(BaseLitModel):  # pylint: disable=too-many-ancestors
                     })
                     wandb_images.append(wandb_image)
 
-                
+
             self.logger.experiment.log({"predictions": wandb_images})
         except AttributeError as e:
                 pass
@@ -77,5 +85,7 @@ class UnetLitModel(BaseLitModel):  # pylint: disable=too-many-ancestors
         logits = self(x)
         self.test_iou(logits, y)
         self.log("test_iou", self.test_iou, on_step=False, on_epoch=True)
+        self.test_f1(logits, y)
+        self.log("test_f1", self.test_f1, on_step=False, on_epoch=True)
         self.test_acc(logits, y)
         self.log("test_acc", self.test_acc, on_step=False, on_epoch=True)
