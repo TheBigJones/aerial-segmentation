@@ -134,7 +134,7 @@ class BaseLitModel(pl.LightningModule):  # pylint: disable=too-many-ancestors
             x, y = batch
         logits = self(x)
         if self.predict_elevation:
-            elevation = logits[:, self.num_classes:, :, :]
+            elevation = torch.squeeze(logits[:, self.num_classes:, :, :])
             logits = logits[:, :self.num_classes, :, :]
         loss = self.calc_loss(logits, y)
         if self.predict_elevation:
@@ -152,7 +152,7 @@ class BaseLitModel(pl.LightningModule):  # pylint: disable=too-many-ancestors
             x, y = batch
         logits = self(x)
         if self.predict_elevation:
-            elevation = logits[:, self.num_classes:, :, :]
+            elevation = torch.squeeze(logits[:, self.num_classes:, :, :])
             logits = logits[:, :self.num_classes, :, :]
         loss = self.calc_loss(logits, y)
         if self.predict_elevation:
@@ -168,7 +168,7 @@ class BaseLitModel(pl.LightningModule):  # pylint: disable=too-many-ancestors
             x, y = batch
         logits = self(x)
         if self.predict_elevation:
-            elevation = logits[:, self.num_classes:, :, :]
+            elevation = torch.squeeze(logits[:, self.num_classes:, :, :])
             logits = logits[:, :self.num_classes, :, :]
         self.test_acc(logits, y)
         self.log("test_acc", self.test_acc, on_step=False, on_epoch=True)

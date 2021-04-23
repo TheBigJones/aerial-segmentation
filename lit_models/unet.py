@@ -32,12 +32,12 @@ class UnetLitModel(BaseLitModel):  # pylint: disable=too-many-ancestors
             x, y = batch
         logits = self(x)
         if self.predict_elevation:
-            elevation = logits[:, self.num_classes:, :, :]
+            elevation = torch.squeeze(logits[:, self.num_classes:, :, :])
             logits = logits[:, :self.num_classes, :, :]
         loss = self.calc_loss(logits, y)
         if self.predict_elevation:
             loss += self.elevation_loss(elevation, z)
-            
+
         self.log("train_loss", loss, on_step=False, on_epoch=True)
         self.train_iou(logits, y)
         self.log("train_IoU", self.train_iou, on_step=False, on_epoch=True)
@@ -54,7 +54,7 @@ class UnetLitModel(BaseLitModel):  # pylint: disable=too-many-ancestors
             x, y = batch
         logits = self(x)
         if self.predict_elevation:
-            elevation = logits[:, self.num_classes:, :, :]
+            elevation = torch.squeeze(logits[:, self.num_classes:, :, :])
             logits = logits[:, :self.num_classes, :, :]
         loss = self.calc_loss(logits, y)
         if self.predict_elevation:
@@ -104,7 +104,7 @@ class UnetLitModel(BaseLitModel):  # pylint: disable=too-many-ancestors
 
         logits = self(x)
         if self.predict_elevation:
-            elevation = logits[:, self.num_classes:, :, :]
+            elevation = torch.squeeze(logits[:, self.num_classes:, :, :])
             logits = logits[:, :self.num_classes, :, :]
         self.test_iou(logits, y)
         self.log("test_iou", self.test_iou, on_step=False, on_epoch=True)
