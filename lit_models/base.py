@@ -9,6 +9,7 @@ LR = 3e-4
 LOSS = "cross_entropy"
 ONE_CYCLE_TOTAL_STEPS = 100
 
+ALPHA_ELEVATION = 1E-2
 
 class Accuracy(torchmetrics.Accuracy):
     """Accuracy Metric with a hack."""
@@ -138,7 +139,7 @@ class BaseLitModel(pl.LightningModule):  # pylint: disable=too-many-ancestors
             logits = logits[:, :self.num_classes, :, :]
         loss = self.calc_loss(logits, y)
         if self.predict_elevation:
-            loss += self.elevation_loss(elevation, z)
+            loss += ALPHA_ELEVATION*self.elevation_loss(elevation, z)
 
         self.log("train_loss", loss)
         self.train_acc(logits, y)
@@ -156,7 +157,7 @@ class BaseLitModel(pl.LightningModule):  # pylint: disable=too-many-ancestors
             logits = logits[:, :self.num_classes, :, :]
         loss = self.calc_loss(logits, y)
         if self.predict_elevation:
-            loss += self.elevation_loss(elevation, z)
+            loss += ALPHA_ELEVATION*self.elevation_loss(elevation, z)
         self.log("val_loss", loss, prog_bar=True)
         self.val_acc(logits, y)
         self.log("val_acc", self.val_acc, on_step=False, on_epoch=True, prog_bar=True)

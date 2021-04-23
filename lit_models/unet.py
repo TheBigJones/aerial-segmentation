@@ -7,7 +7,7 @@ try:
 except ModuleNotFoundError:
     pass
 
-from .base import BaseLitModel, IoU, F1
+from .base import BaseLitModel, IoU, F1, ALPHA_ELEVATION
 
 
 class UnetLitModel(BaseLitModel):  # pylint: disable=too-many-ancestors
@@ -36,7 +36,7 @@ class UnetLitModel(BaseLitModel):  # pylint: disable=too-many-ancestors
             logits = logits[:, :self.num_classes, :, :]
         loss = self.calc_loss(logits, y)
         if self.predict_elevation:
-            loss += self.elevation_loss(elevation, z)
+            loss += ALPHA_ELEVATION*self.elevation_loss(elevation, z)
 
         self.log("train_loss", loss, on_step=False, on_epoch=True)
         self.train_iou(logits, y)
@@ -58,7 +58,7 @@ class UnetLitModel(BaseLitModel):  # pylint: disable=too-many-ancestors
             logits = logits[:, :self.num_classes, :, :]
         loss = self.calc_loss(logits, y)
         if self.predict_elevation:
-            loss += self.elevation_loss(elevation, z)
+            loss += ALPHA_ELEVATION*self.elevation_loss(elevation, z)
 
         self.log("val_loss", loss, prog_bar=True)
         self.val_iou(logits, y)
