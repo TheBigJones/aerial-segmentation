@@ -26,7 +26,10 @@ class UnetLitModel(BaseLitModel):  # pylint: disable=too-many-ancestors
         self.test_f1 = F1(num_classes=self.num_classes)
 
     def training_step(self, batch, batch_idx):  # pylint: disable=unused-argument
-        x, y = batch
+        if self.predict_elevation:
+            x, y, z = batch
+        else:
+            x, y = batch
         logits = self(x)
         loss = self.calc_loss(logits, y)
 
@@ -40,7 +43,10 @@ class UnetLitModel(BaseLitModel):  # pylint: disable=too-many-ancestors
         return loss
 
     def validation_step(self, batch, batch_idx):  # pylint: disable=unused-argument
-        x, y = batch
+        if self.predict_elevation:
+            x, y, z = batch
+        else:
+            x, y = batch
         logits = self(x)
         loss = self.calc_loss(logits, y)
 
@@ -81,7 +87,11 @@ class UnetLitModel(BaseLitModel):  # pylint: disable=too-many-ancestors
                 pass
 
     def test_step(self, batch, batch_idx):  # pylint: disable=unused-argument
-        x, y = batch
+        if self.predict_elevation:
+            x, y, z = batch
+        else:
+            x, y = batch
+
         logits = self(x)
         self.test_iou(logits, y)
         self.log("test_iou", self.test_iou, on_step=False, on_epoch=True)

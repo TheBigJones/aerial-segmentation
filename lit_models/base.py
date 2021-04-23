@@ -93,6 +93,10 @@ class BaseLitModel(pl.LightningModule):  # pylint: disable=too-many-ancestors
             self.loss_fn = getattr(torch.nn.functional, loss)
             self.loss_fn.__init__(weight=self.loss_weights)
 
+        self.predict_elevation = self.args.get("predict_elevation", False)
+        if self.predict_elevation:
+            self.elevation_loss = torch.nn.MSELoss()
+
         self.train_acc = Accuracy()
         self.val_acc = Accuracy()
         self.test_acc = Accuracy()
@@ -124,7 +128,10 @@ class BaseLitModel(pl.LightningModule):  # pylint: disable=too-many-ancestors
         return loss
 
     def training_step(self, batch, batch_idx):  # pylint: disable=unused-argument
-        x, y = batch
+        if self.predict_elevation:
+            x, y, z = batch
+        else:
+            x, y = batch
         logits = self(x)
         loss = self.calc_loss(logits, y)
         self.log("train_loss", loss)
@@ -133,7 +140,10 @@ class BaseLitModel(pl.LightningModule):  # pylint: disable=too-many-ancestors
         return loss
 
     def validation_step(self, batch, batch_idx):  # pylint: disable=unused-argument
-        x, y = batch
+        if self.predict_elevation:
+            x, y, z = batch
+        else:
+            x, y = batch
         logits = self(x)
         loss = self.calc_loss(logits, y)
         self.log("val_loss", loss, prog_bar=True)
@@ -141,7 +151,10 @@ class BaseLitModel(pl.LightningModule):  # pylint: disable=too-many-ancestors
         self.log("val_acc", self.val_acc, on_step=False, on_epoch=True, prog_bar=True)
 
     def test_step(self, batch, batch_idx):  # pylint: disable=unused-argument
-        x, y = batch
+        if self.predict_elevation:
+            x, y, z = batch
+        else:
+            x, y = batch
         logits = self(x)
         self.test_acc(logits, y)
         self.log("test_acc", self.test_acc, on_step=False, on_epoch=True)

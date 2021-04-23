@@ -41,6 +41,8 @@ def _setup_parser():
     parser.add_argument("--load_checkpoint", type=str, default=None)
     parser.add_argument("--enable_test", action="store_true", default=False)
 
+    parser.add_argument("--predict_elevation", action="store_true", default=False)
+
     # Get the data and model classes, so that we can add their specific arguments
     temp_args, _ = parser.parse_known_args()
     data_class = _import_class(f"data.{temp_args.data_class}")
