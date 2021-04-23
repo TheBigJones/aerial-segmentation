@@ -25,6 +25,13 @@ class Unet(smp.Unet):
         self.num_classes = data_config["mapping"][0]
         self.class_labels = data_config["class_labels"]
 
+        # If elevation is to be predicted, too, add another 'class',
+        # which will serve as elevation prediction
+        self.predict_elevation = self.args.get("predict_elevation", False)
+        if self.predict_elevation:
+            self.num_classes += 1
+
+
         decoder_channels = self.args.get("decoder_channels", DECODER_CHANNELS)
         decoder_use_batchnorm = self.args.get("decoder_use_batchnorm", DECODER_USE_BATCHNORM)
         encoder_name = self.args.get("encoder_name", ENCODER_NAME)
