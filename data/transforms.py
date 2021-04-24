@@ -102,5 +102,6 @@ class Normalize(object):
 
     def __call__(self, image, target, elev_target=None):
         image = F.normalize(image, mean=self.mean, std=self.std)
-        elev_target = elev_target/255.
+        if elev_target is not None:
+            elev_target = elev_target/255.
         return image, target, elev_target
