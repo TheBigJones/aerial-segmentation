@@ -3,6 +3,7 @@ import pytorch_lightning as pl
 import torch
 import torchmetrics
 
+from pytorch_lightning.metrics.utils import to_onehot
 
 OPTIMIZER = "Adam"
 LR = 3e-4
@@ -10,6 +11,37 @@ LOSS = "cross_entropy"
 ONE_CYCLE_TOTAL_STEPS = 100
 
 ALPHA_ELEVATION = 1E-2
+
+
+ALPHA_TVERSKY = 0.7
+BETA_TVERSKY = 0.3
+GAMMA_TVERSKY = 3./4
+
+class FocalTverskyLoss(pl.LightningModule):
+    def __init__(self, num_classes, weight=None, size_average=True, smooth=0.0, alpha=ALPHA_TVERSKY, beta=BETA_TVERSKY, gamma=GAMMA_TVERSKY):
+        super().__init__()
+        self.smooth = smooth
+        self.alpha = alpha
+        self.beta = beta
+        self.gamma = gamma
+        self.num_classes = num_classes
+
+    def forward(self, preds: torch.Tensor, targets: torch.Tensor):
+        if preds.min() < 0 or preds.max() > 1:
+            preds = torch.nn.functional.softmax(preds, dim=1)
+
+        targets = to_onehot(targets, self.num_classes)
+
+        #True Positives, False Positives & False Negatives
+        TP = (preds * targets).sum()
+        FP = ((1-targets) * preds).sum()
+        FN = (targets * (1-preds)).sum()
+
+        Tversky = (TP + self.smooth) / (TP + self.alpha*FP + self.beta*FN + self.smooth)
+        FocalTversky = (1 - Tversky)**self.gamma
+
+        return FocalTversky
+
 
 class Accuracy(torchmetrics.Accuracy):
     """Accuracy Metric with a hack."""
@@ -90,9 +122,11 @@ class BaseLitModel(pl.LightningModule):  # pylint: disable=too-many-ancestors
             self.loss_weights[self.ignore_index] = 0.
 
         loss = self.args.get("loss", LOSS)
-        if loss not in ("ctc", "transformer"):
+        if loss not in ("tversky"):
             self.loss_fn = getattr(torch.nn.functional, loss)
             self.loss_fn.__init__(weight=self.loss_weights)
+        elif loss == "tversky":
+            self.loss_fn = FocalTverskyLoss(self.num_classes)
 
         self.predict_elevation = self.args.get("predict_elevation", False)
         if self.predict_elevation:
