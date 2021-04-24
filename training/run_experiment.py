@@ -112,7 +112,7 @@ def main():
     )
     callbacks = [early_stopping_callback, model_checkpoint_callback]
 
-    args.weights_summary = "full"  # Print full summary of the model
+    args.weights_summary = None  # Print full summary of the model
     trainer = pl.Trainer.from_argparse_args(
         args, callbacks=callbacks, logger=logger, weights_save_path="training/logs")
 
