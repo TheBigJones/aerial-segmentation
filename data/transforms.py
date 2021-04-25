@@ -46,7 +46,7 @@ class RandomResize(object):
 
 
 class RandomHorizontalFlip(object):
-    def __init__(self, flip_prob):
+    def __init__(self, flip_prob=0.5):
         self.flip_prob = flip_prob
 
     def __call__(self, image, target, elev_target=None):
@@ -58,7 +58,7 @@ class RandomHorizontalFlip(object):
         return image, target, elev_target
 
 class RandomVerticalFlip(object):
-    def __init__(self, flip_prob):
+    def __init__(self, flip_prob=0.5):
         self.flip_prob = flip_prob
 
     def __call__(self, image, target, elev_target=None):
@@ -70,10 +70,14 @@ class RandomVerticalFlip(object):
         return image, target, elev_target
 
 class RandomRotation(object):
-    def __init__(self, degrees):
+    def __init__(self, degrees=90):
         self.degrees = degrees
+        # Subtract one to avoid having rotation by zero degrees twice
+        self.num_rotations = int(360//degrees)-1
 
     def __call__(self, image, target, elev_target=None):
+        degrees = random.randint(0, self.num_rotations) * self.degrees
+
         image = F.rotate(image, self.degrees)
         target = F.rotate(target, self.degrees)
         if elev_target is not None:
