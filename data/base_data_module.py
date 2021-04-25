@@ -54,9 +54,6 @@ class BaseDataModule(pl.LightningDataModule):
             raise ParserError("Must specify number of workers explicitely via read_config or num_workers.")
 
 
-        print(self.num_workers)
-        import sys
-        sys.exit(-1)
         self.image_size = self.args.get("image_size", IMAGE_SIZE)
 
         self.on_gpu = isinstance(self.args.get("gpus", None), (str, int))
