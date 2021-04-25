@@ -23,9 +23,13 @@ def load_and_print_info(data_module_class) -> None:
 
 
 BATCH_SIZE = 8
-NUM_WORKERS = 12
+NUM_WORKERS = -1
 IMAGE_SIZE=300
+READ_CONFIG=True
 
+
+class ParserError(Exception):
+    pass
 
 class BaseDataModule(pl.LightningDataModule):
     """
@@ -37,7 +41,22 @@ class BaseDataModule(pl.LightningDataModule):
         super().__init__()
         self.args = vars(args) if args is not None else {}
         self.batch_size = self.args.get("batch_size", BATCH_SIZE)
+
+        self.read_config = self.args.get("read_config", READ_CONFIG)
         self.num_workers = self.args.get("num_workers", NUM_WORKERS)
+        if self.num_workers >=0 and self.read_config:
+            raise ParserError("read_config and num_workers-arg set at the same time.")
+        elif self.read_config:
+            conf = self.read_config_from_file()
+            print(conf)
+            self.num_workers = int(conf["num_workers"])
+        elif self.num_workers < 0:
+            raise ParserError("Must specify number of workers explicitely via read_config or num_workers.")
+
+
+        print(self.num_workers)
+        import sys
+        sys.exit(-1)
         self.image_size = self.args.get("image_size", IMAGE_SIZE)
 
         self.on_gpu = isinstance(self.args.get("gpus", None), (str, int))
@@ -50,6 +69,15 @@ class BaseDataModule(pl.LightningDataModule):
         self.data_test: Union[BaseDataset, ConcatDataset]
         self.class_labels: Dict
 
+    def read_config_from_file(self):
+        conf = {}
+        for line in open("config.dat"):
+            if line.startswith("#"):
+                continue
+            arg,val = line.split("=")
+            conf[arg.strip()] = val.strip()
+        return conf
+
     @staticmethod
     def add_to_argparse(parser):
         parser.add_argument(
@@ -60,6 +88,9 @@ class BaseDataModule(pl.LightningDataModule):
         )
         parser.add_argument(
             "--image_size", type=int, default=IMAGE_SIZE, help="Size of input images to resize to."
+        )
+        parser.add_argument(
+            "--read_config", action="store_true", default=False
         )
         return parser
 
