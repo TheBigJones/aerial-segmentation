@@ -7,7 +7,9 @@ from torch.utils.data import ConcatDataset, DataLoader
 import pytorch_lightning as pl
 
 from data.util_torch import BaseDataset
+import torch
 
+import numpy as np
 
 def load_and_print_info(data_module_class) -> None:
     """Load EMNISTLines and print info."""
@@ -77,6 +79,10 @@ class BaseDataModule(pl.LightningDataModule):
         Should assign `torch Dataset` objects to self.data_train, self.data_val, and optionally self.data_test.
         """
 
+    # Probs to the dudes from https://tanelp.github.io/posts/a-bug-that-plagues-thousands-of-open-source-ml-projects/
+    def worker_init_fn(self, worker_id):
+        np.random.seed(torch.randint(high=2**32 - 1, size=(1,))[0] + worker_id)
+
     def train_dataloader(self):
         return DataLoader(
             self.data_train,
@@ -84,6 +90,7 @@ class BaseDataModule(pl.LightningDataModule):
             batch_size=self.batch_size,
             num_workers=self.num_workers,
             pin_memory=self.on_gpu,
+            worker_init_fn=self.worker_init_fn
         )
 
     def val_dataloader(self):
@@ -93,6 +100,7 @@ class BaseDataModule(pl.LightningDataModule):
             batch_size=self.batch_size,
             num_workers=self.num_workers,
             pin_memory=self.on_gpu,
+            worker_init_fn=self.worker_init_fn
         )
 
     def test_dataloader(self):
@@ -102,4 +110,5 @@ class BaseDataModule(pl.LightningDataModule):
             batch_size=self.batch_size,
             num_workers=self.num_workers,
             pin_memory=self.on_gpu,
+            worker_init_fn=self.worker_init_fn
         )
