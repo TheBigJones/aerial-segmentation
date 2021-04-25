@@ -4,6 +4,7 @@ command:
   - ${program}
   - "--wandb"
   - ${args}
+  - "--augmentation hflip vflip rotate"
 program: training/run_experiment.py
 method: bayes
 metric:
@@ -25,8 +26,6 @@ parameters:
     values: [resnet101, resnet50, mobilenet_v2]
   loss:
     values: [cross_entropy, tversky]
-  augmentation:
-    value: hflip vflip rotate
   dataset:
     value: dataset-medium
   batch_size:
