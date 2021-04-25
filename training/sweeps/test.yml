@@ -2,9 +2,8 @@ command:
   - ${env}
   - ${interpreter}
   - ${program}
-  - "--wandb"
+  - "--wandb --augmentation hflip vflip rotate"
   - ${args}
-  - "--augmentation hflip vflip rotate"
 program: training/run_experiment.py
 method: bayes
 metric:
