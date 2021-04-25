@@ -15,6 +15,12 @@ from data.config import LABELS
 
 ELEVATION = False
 DATASET = "dataset-sample"
+TRANSFORMS_ARGS = {
+    "hflip" : "RandomHorizontalFlip",
+    "vflip" : "RandomVerticalFlip",
+    "crop" : "RandomCrop",
+    "rotate" : "RandomRotation"
+}
 
 def load_lines(fname):
     with open(fname, 'r') as f:
@@ -28,9 +34,7 @@ class AerialData(BaseDataModule):
 
     def __init__(self, args: argparse.Namespace) -> None:
         super().__init__(args)
-        #TODO normalize equal to pretrained model
-        self.transform = transforms.Compose([transforms.ToTensor(), transforms.Normalize(mean=[0.485, 0.456, 0.406],
-                                                                                           std=[0.229, 0.224, 0.225])])
+
         self.dims = (3, self.image_size, self.image_size)  # dims are returned when calling `.size()` on this object.
         # create dict {0:class1, 1:class2 ....}
         self.class_labels = dict(zip(range(len(LABELS)),LABELS))
@@ -47,7 +51,18 @@ class AerialData(BaseDataModule):
         parser.add_argument(
             "--dataset", type=str, default=DATASET, help="Datset to use. Choose from 'dataset-sample' and 'dataset-medium'."
         )
+        parser.add_argument(
+            "--augmentations", type=List, default=[], help="Augmentation Options: hflip, vflip, crop, rotate, shear"
+        )
         return parser
+    
+    def prepare_transforms(self, *args):
+        transforms_list = [transforms.ToTensor(), transforms.Normalize(mean=[0.485, 0.456, 0.406],std=[0.229, 0.224, 0.225])]
+        for aug in args.augmentations:
+            #TODO how to set the function parameters?
+            transforms_list.append(getattr(transforms, aug))
+
+        self.transform = transforms.Compose(transforms_list)
 
     def prepare_data(self, *args, **kwargs) -> None:
         pass

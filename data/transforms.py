@@ -57,6 +57,29 @@ class RandomHorizontalFlip(object):
                 elev_target = F.hflip(elev_target)
         return image, target, elev_target
 
+class RandomVerticalFlip(object):
+    def __init__(self, flip_prob):
+        self.flip_prob = flip_prob
+
+    def __call__(self, image, target, elev_target=None):
+        if random.random() < self.flip_prob:
+            image = F.vflip(image)
+            target = F.vflip(target)
+            if elev_target is not None:
+                elev_target = F.vflip(elev_target)
+        return image, target, elev_target
+
+class RandomRotation(object):
+    def __init__(self, degrees):
+        self.degrees = degrees
+
+    def __call__(self, image, target, elev_target=None):
+        image = F.rotate(image, self.degresse)
+        target = F.rotate(target, self.degresse)
+        if elev_target is not None:
+            elev_target = F.rotate(elev_target, self.degresse)
+        return image, target, elev_target
+
 
 class RandomCrop(object):
     def __init__(self, size):
