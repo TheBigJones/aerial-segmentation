@@ -8,6 +8,7 @@ command:
   - "hflip"
   - "vflip"
   - "rotate"
+  - "--read_config"
 program: training/run_experiment.py
 method: bayes
 project: aerialsegmenation-sweeps
@@ -34,6 +35,6 @@ parameters:
   dataset:
     value: dataset-medium
   batch_size:
-    values: [8, 16, 32]
+    values: [8, 16]
   elevation_alpha:
     values: [1e-1, 1e-2, 1e0, 1e1]
