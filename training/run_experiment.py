@@ -44,7 +44,7 @@ def _setup_parser():
     parser.add_argument("--enable_test", action="store_true", default=False)
     parser.add_argument("--patience", type=int, default=PATIENCE)
 
-    parser.add_argument("--predict_elevation", action="store_true", default=False)
+    parser.add_argument("--elevation_alpha", type=float, default=0.0)
 
     # Get the data and model classes, so that we can add their specific arguments
     temp_args, _ = parser.parse_known_args()

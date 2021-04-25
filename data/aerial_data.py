@@ -13,7 +13,6 @@ import os
 
 from data.config import LABELS
 
-ELEVATION = False
 DATASET = "dataset-sample"
 TRANSFORMS_ARGS = {
     "hflip" : "RandomHorizontalFlip",
@@ -40,7 +39,7 @@ class AerialData(BaseDataModule):
         self.class_labels = dict(zip(range(len(LABELS)),LABELS))
 
         self.mapping = (len(self.class_labels), self.image_size, self.image_size)
-        self.elevation = self.args.get("predict_elevation", ELEVATION)
+        self.predict_elevation = (self.args.get("elevation_alpha", 0.0) > 0.0)
         self.dataset = self.args.get("dataset", DATASET)
 
         self.prepare_transforms()
@@ -79,9 +78,9 @@ class AerialData(BaseDataModule):
         test_labels = [t.replace("image-chips", "label-chips") for t in test_imgs]
 
         ## TODO: check whether format is correct: Should it be [[datum, targt]] or [[datum], [target]]
-        self.data_train = BaseDataset([e for e in train_imgs], [e for e in train_labels], shape=(self.image_size,self.image_size), transform = self.transform, return_eval = self.elevation)
-        self.data_val = BaseDataset([e for e in valid_imgs], [e for e in valid_labels], shape=(self.image_size,self.image_size), transform = self.transform, return_eval = self.elevation)
-        self.data_test = BaseDataset([e for e in test_imgs], [e for e in test_labels], shape=(self.image_size,self.image_size), return_eval = self.elevation)
+        self.data_train = BaseDataset([e for e in train_imgs], [e for e in train_labels], shape=(self.image_size,self.image_size), transform = self.transform, return_eval = self.predict_elevation)
+        self.data_val = BaseDataset([e for e in valid_imgs], [e for e in valid_labels], shape=(self.image_size,self.image_size), transform = self.transform, return_eval = self.predict_elevation)
+        self.data_test = BaseDataset([e for e in test_imgs], [e for e in test_labels], shape=(self.image_size,self.image_size), return_eval = self.predict_elevation)
 
 
 if __name__ == "__main__":

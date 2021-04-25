@@ -27,7 +27,7 @@ class Unet(smp.Unet):
 
         # If elevation is to be predicted, too, add another 'class',
         # which will serve as elevation prediction
-        self.predict_elevation = self.args.get("predict_elevation", False)
+        self.predict_elevation = (self.args.get("elevation_alpha", 0.0) > 0.0)
         if self.predict_elevation:
             self.num_classes += 1
 

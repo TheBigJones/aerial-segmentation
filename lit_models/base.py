@@ -17,9 +17,6 @@ LOSS = "cross_entropy"
 ONE_CYCLE_TOTAL_STEPS = 100
 MAX_IMGS=15
 
-ALPHA_ELEVATION = 1E-2
-
-
 ALPHA_TVERSKY = 0.7
 BETA_TVERSKY = 0.3
 GAMMA_TVERSKY = 3./4
@@ -138,7 +135,8 @@ class BaseLitModel(pl.LightningModule):  # pylint: disable=too-many-ancestors
         elif loss == "tversky":
             self.loss_fn = FocalTverskyLoss(self.num_classes)
 
-        self.predict_elevation = self.args.get("predict_elevation", False)
+        self.elevation_alpha = self.args.get("elevation_alpha", 0.0)
+        self.predict_elevation = (self.elevation_alpha > 0.0)
         if self.predict_elevation:
             self.elevation_loss = torch.nn.MSELoss()
 
@@ -193,7 +191,7 @@ class BaseLitModel(pl.LightningModule):  # pylint: disable=too-many-ancestors
             logits = logits[:, :self.num_classes, :, :]
         loss = self.calc_loss(logits, y)
         if self.predict_elevation:
-            loss += ALPHA_ELEVATION*self.elevation_loss(elevation, z)
+            loss += self.elevation_alpha*self.elevation_loss(elevation, z)
 
         self.log("train_loss", loss, on_step=False, on_epoch=True)
         self.train_iou(logits, y)
@@ -215,7 +213,7 @@ class BaseLitModel(pl.LightningModule):  # pylint: disable=too-many-ancestors
             logits = logits[:, :self.num_classes, :, :]
         loss = self.calc_loss(logits, y)
         if self.predict_elevation:
-            loss += ALPHA_ELEVATION*self.elevation_loss(elevation, z)
+            loss += self.elevation_alpha*self.elevation_loss(elevation, z)
 
         self.log("val_loss", loss, prog_bar=True)
         self.val_iou(logits, y)
