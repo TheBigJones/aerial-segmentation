@@ -5,23 +5,33 @@ command:
   - "--wandb"
   - ${args}
 program: training/run_experiment.py
-method: random
+method: bayes
 metric:
-  goal: minimize
-  name: val_loss
+  goal: maximize
+  name: val_f1
 early_terminate:
   type: hyperband
   min_iter: 20
 parameters:
   lr:
-    values: [0.01, 0.001, 0.0003]
+    values: [1e-2, 1e-3, 3e-4, 5e-5, 1e-4]
   gpus:
     value: -1
   data_class:
     value: AerialData
   model_class:
     value: Unet
+  encoder_name:
+    values: [resnet101, resnet50, mobilenet_v2]
   loss:
-    value: cross_entropy
-  precision:
-    value: 16
+    values: [cross_entropy, tversky]
+  augmentation:
+    value: hflip vflip rotate
+  dataset:
+    value: dataset-medium
+  batch_size:
+    values: [8, 16, 32]
+  elevation_alpha:
+    values: [1e-1, 1e-2, 1e0, 1e1]
+  predict_elevation:
+    values: [True, False]
