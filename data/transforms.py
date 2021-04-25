@@ -70,18 +70,17 @@ class RandomVerticalFlip(object):
         return image, target, elev_target
 
 class RandomRotation(object):
-    def __init__(self, degrees=90):
-        self.degrees = degrees
-        # Subtract one to avoid having rotation by zero degrees twice
-        self.num_rotations = int(360//degrees)-1
+    def __init__(self):
+        self.num_rotations = 3
 
     def __call__(self, image, target, elev_target=None):
-        degrees = random.randint(0, self.num_rotations) * self.degrees
+        rotations = random.randint(0, self.num_rotations)
 
-        image = F.rotate(image, self.degrees)
-        target = F.rotate(target, self.degrees)
+        image = torch.rot90(image, k = rotations, dims = (-1,-2))
+        target = torch.rot90(target, k = rotations, dims = (-1,-2))
         if elev_target is not None:
-            elev_target = F.rotate(elev_target, self.degrees)
+            elev_target = torch.rot90(elev_target, k = rotations, dims = (-1,-2))
+
         return image, target, elev_target
 
 
