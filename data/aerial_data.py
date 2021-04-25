@@ -43,7 +43,7 @@ class AerialData(BaseDataModule):
         self.elevation = self.args.get("predict_elevation", ELEVATION)
         self.dataset = self.args.get("dataset", DATASET)
 
-
+        self.prepare_transforms()
 
     @staticmethod
     def add_to_argparse(parser):
@@ -52,15 +52,14 @@ class AerialData(BaseDataModule):
             "--dataset", type=str, default=DATASET, help="Datset to use. Choose from 'dataset-sample' and 'dataset-medium'."
         )
         parser.add_argument(
-            "--augmentations", type=List, default=[], help="Augmentation Options: hflip, vflip, crop, rotate, shear"
+            "--augmentations", nargs='+', default=None, help="Augmentation Options: hflip, vflip, crop, rotate, shear"
         )
         return parser
-    
-    def prepare_transforms(self, *args):
+
+    def prepare_transforms(self):
         transforms_list = [transforms.ToTensor(), transforms.Normalize(mean=[0.485, 0.456, 0.406],std=[0.229, 0.224, 0.225])]
-        for aug in args.augmentations:
-            #TODO how to set the function parameters?
-            transforms_list.append(getattr(transforms, aug))
+        for aug in self.args.get("augmentations"):
+            transforms_list.append(getattr(transforms, TRANSFORMS_ARGS[aug])())
 
         self.transform = transforms.Compose(transforms_list)
 
