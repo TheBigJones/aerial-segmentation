@@ -68,17 +68,17 @@ class UnetLitModel(BaseLitModel):  # pylint: disable=too-many-ancestors
         self.log("val_f1", self.val_f1, on_step=False, on_epoch=True)
         self.val_acc(logits, y)
         self.log("val_acc", self.val_acc, on_step=False, on_epoch=True, prog_bar=True)
-        return {'x' : x[0], 'y' : y[0], 'logits' : logits[0]}
+        return {'x' : x[0].cpu().numpy(), 'y' : y[0].cpu().numpy(), 'logits' : logits[0].cpu()}
 
     def validation_epoch_end(self, validation_step_outputs):
         wandb_images = []
         try:
             for out in validation_step_outputs:
 
-                    original_image = np.moveaxis(out['x'].cpu().numpy(), 0, -1)
-                    ground_truth_mask = out['y'].cpu().numpy()
+                    original_image = np.moveaxis(out['x'], 0, -1)
+                    ground_truth_mask = out['y']
                     # [7,300,300] -> [1,300,300] 1 soll dim argmax
-                    prediction_mask = torch.argmax(out['logits'], dim=0).cpu().numpy()
+                    prediction_mask = torch.argmax(out['logits'], dim=0)
                     wandb_image = wandb.Image(original_image, masks={
                         "predictions": {
                             "mask_data": prediction_mask,
