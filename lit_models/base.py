@@ -15,6 +15,7 @@ OPTIMIZER = "Adam"
 LR = 3e-4
 LOSS = "cross_entropy"
 ONE_CYCLE_TOTAL_STEPS = 100
+MAX_IMGS=15
 
 ALPHA_ELEVATION = 1E-2
 
@@ -115,6 +116,7 @@ class BaseLitModel(pl.LightningModule):  # pylint: disable=too-many-ancestors
         self.one_cycle_max_lr = self.args.get("one_cycle_max_lr", None)
         self.one_cycle_total_steps = self.args.get("one_cycle_total_steps", ONE_CYCLE_TOTAL_STEPS)
         self.mask_loss = self.args.get("mask_loss", False)
+        self.max_imgs = self.args.get("max_imgs", MAX_IMGS)
 
         self.class_labels = model.class_labels
         self.num_classes = len(self.class_labels)
@@ -159,6 +161,7 @@ class BaseLitModel(pl.LightningModule):  # pylint: disable=too-many-ancestors
         parser.add_argument("--one_cycle_total_steps", type=int, default=ONE_CYCLE_TOTAL_STEPS)
         parser.add_argument("--loss", type=str, default=LOSS, help="loss function from torch.nn.functional")
         parser.add_argument("--mask_loss", action="store_true", default=False, help="masks ignores from target in lass-calculation")
+        parser.add_argument("--max_imgs", type=int, default=MAX_IMGS, help="Maximum number of images to log")
         return parser
 
     def configure_optimizers(self):
@@ -224,24 +227,28 @@ class BaseLitModel(pl.LightningModule):  # pylint: disable=too-many-ancestors
 
     def validation_epoch_end(self, validation_step_outputs):
         wandb_images = []
+        counter = 0
         try:
             for out in validation_step_outputs:
+                if counter >= self.max_imgs:
+                    break
+                counter += 1
 
-                    original_image = np.moveaxis(out['x'], 0, -1)
-                    ground_truth_mask = out['y']
-                    # [7,300,300] -> [1,300,300] 1 soll dim argmax
-                    prediction_mask = torch.argmax(out['logits'], dim=0).numpy()
-                    wandb_image = wandb.Image(original_image, masks={
-                        "predictions": {
-                            "mask_data": prediction_mask,
-                            "class_labels": self.class_labels
-                        },
-                        "ground_truth": {
-                            "mask_data": ground_truth_mask,
-                            "class_labels": self.class_labels
-                        }
-                    })
-                    wandb_images.append(wandb_image)
+                original_image = np.moveaxis(out['x'], 0, -1)
+                ground_truth_mask = out['y']
+                # [7,300,300] -> [1,300,300] 1 soll dim argmax
+                prediction_mask = torch.argmax(out['logits'], dim=0).numpy()
+                wandb_image = wandb.Image(original_image, masks={
+                    "predictions": {
+                        "mask_data": prediction_mask,
+                        "class_labels": self.class_labels
+                    },
+                    "ground_truth": {
+                        "mask_data": ground_truth_mask,
+                        "class_labels": self.class_labels
+                    }
+                })
+                wandb_images.append(wandb_image)
 
 
             self.logger.experiment.log({"predictions": wandb_images})
