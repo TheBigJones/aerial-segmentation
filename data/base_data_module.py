@@ -48,7 +48,6 @@ class BaseDataModule(pl.LightningDataModule):
             raise ParserError("read_config and num_workers-arg set at the same time.")
         elif self.read_config:
             conf = self.read_config_from_file()
-            print(conf)
             self.num_workers = int(conf["num_workers"])
         elif self.num_workers < 0:
             raise ParserError("Must specify number of workers explicitely via read_config or num_workers.")
