@@ -74,10 +74,10 @@ class RandomRotation(object):
         self.degrees = degrees
 
     def __call__(self, image, target, elev_target=None):
-        image = F.rotate(image, self.degresse)
-        target = F.rotate(target, self.degresse)
+        image = F.rotate(image, self.degrees)
+        target = F.rotate(target, self.degrees)
         if elev_target is not None:
-            elev_target = F.rotate(elev_target, self.degresse)
+            elev_target = F.rotate(elev_target, self.degrees)
         return image, target, elev_target
 
 
