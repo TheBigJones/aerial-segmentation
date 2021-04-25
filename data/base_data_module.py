@@ -24,7 +24,7 @@ def load_and_print_info(data_module_class) -> None:
 
 BATCH_SIZE = 8
 NUM_WORKERS = 12
-IMAGE_SIZE=288
+IMAGE_SIZE=300
 
 
 class BaseDataModule(pl.LightningDataModule):
