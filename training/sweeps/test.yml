@@ -22,7 +22,7 @@ parameters:
   lr:
     values: [1e-2, 1e-3, 3e-4, 5e-5, 1e-4]
   gpus:
-    value: -1
+    value: 1
   data_class:
     value: AerialData
   model_class:
