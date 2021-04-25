@@ -14,6 +14,8 @@ import lit_models
 np.random.seed(42)
 torch.manual_seed(42)
 
+PATIENCE=10
+
 
 def _import_class(module_and_class_name: str) -> type:
     """Import class from a module, e.g. 'models.MLP'"""
@@ -40,6 +42,7 @@ def _setup_parser():
     parser.add_argument("--model_class", type=str, default="MLP")
     parser.add_argument("--load_checkpoint", type=str, default=None)
     parser.add_argument("--enable_test", action="store_true", default=False)
+    parser.add_argument("--patience", type=int, default=PATIENCE)
 
     parser.add_argument("--predict_elevation", action="store_true", default=False)
 
@@ -77,6 +80,7 @@ def main():
     model = model_class(data_config=data.config(), args=args)
 
     enable_test = vars(args).get("enable_test", False)
+    patience = vars(args).get("patience", PATIENCE)
 
     if args.loss not in ("ctc", "transformer"):
         lit_model_class = lit_models.BaseLitModel
@@ -106,7 +110,7 @@ def main():
     # Hide lines above until Lab 5
 
     early_stopping_callback = pl.callbacks.EarlyStopping(
-        monitor="val_loss", mode="min", patience=10)
+        monitor="val_loss", mode="min", patience=patience)
     model_checkpoint_callback = pl.callbacks.ModelCheckpoint(
         filename="{epoch:03d}-{val_loss:.3f}-{val_cer:.3f}", monitor="val_loss", mode="min"
     )
