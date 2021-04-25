@@ -58,8 +58,9 @@ class AerialData(BaseDataModule):
 
     def prepare_transforms(self):
         transforms_list = [transforms.ToTensor(), transforms.Normalize(mean=[0.485, 0.456, 0.406],std=[0.229, 0.224, 0.225])]
-        for aug in self.args.get("augmentations"):
-            transforms_list.append(getattr(transforms, TRANSFORMS_ARGS[aug])())
+        if self.args.get("augmentations") is not None:
+            for aug in self.args.get("augmentations"):
+                transforms_list.append(getattr(transforms, TRANSFORMS_ARGS[aug])())
 
         self.transform = transforms.Compose(transforms_list)
 

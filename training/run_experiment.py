@@ -100,7 +100,7 @@ def main():
     logger = pl.loggers.TensorBoardLogger("training/logs")
     # Hide lines below until Lab 5
     if args.wandb:
-        logger = pl.loggers.WandbLogger(project='aerialsegmenation', entity='team_jf')
+        logger = pl.loggers.WandbLogger(project='aerialsegmenation', entity='team_jf', settings=wandb.Settings(symlink=False))
         logger.watch(model)
         logger.log_hyperparams(vars(args))
     # Hide lines above until Lab 5
