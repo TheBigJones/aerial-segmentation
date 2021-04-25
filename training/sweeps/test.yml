@@ -2,10 +2,16 @@ command:
   - ${env}
   - ${interpreter}
   - ${program}
-  - "--wandb --augmentation hflip vflip rotate"
+  - "--wandb"
   - ${args}
+  - "--augmentations" 
+  - "hflip"
+  - "vflip"
+  - "rotate"
 program: training/run_experiment.py
 method: bayes
+project: aerialsegmenation-sweeps
+entity: team_jf
 metric:
   goal: maximize
   name: val_f1
