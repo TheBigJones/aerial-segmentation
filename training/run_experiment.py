@@ -9,6 +9,7 @@ import wandb
 
 import lit_models
 
+from .inference import run_inference, SegModel
 
 # In order to ensure reproducible experiments, we must set random seeds.
 np.random.seed(42)
@@ -124,9 +125,7 @@ def main():
     # If passing --auto_lr_find, this will set learning rate
     trainer.tune(lit_model, datamodule=data)
 
-    trainer.fit(lit_model, datamodule=data)
-    if enable_test:
-        trainer.test(lit_model, datamodule=data)
+    trainer.fit(lit_model, datamodule=data)        
     # pylint: enable=no-member
 
     # Hide lines below until Lab 5
@@ -137,7 +136,10 @@ def main():
             wandb.save(best_model_path)
             print("Best model also uploaded to W&B")
     # Hide lines above until Lab 5
-
+    if enable_test:
+      SegModel(best_model_path)
+      dataset = vars(args).get("dataset", None)
+      run_inference(dataset, )
 
 if __name__ == "__main__":
     main()
