@@ -3,7 +3,7 @@ import numpy as np
 import math
 import os
 
-from libs.config import train_ids, test_ids, val_ids, LABELMAP_RGB
+from data.config import train_ids, test_ids, val_ids, LABELMAP_RGB
 
 def category2mask(img):
     """ Convert a category image to color mask """

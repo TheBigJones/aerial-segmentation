@@ -1,6 +1,5 @@
 from models.unet import Unet
 
-
 class SegModel:
   """
   Class to run inference at the end of testing
