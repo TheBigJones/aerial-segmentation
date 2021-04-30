@@ -9,7 +9,7 @@ import wandb
 
 import lit_models
 
-from .inference import run_inference, SegModel
+from .inference import run_inference, SegModel, score_predictions
 
 # In order to ensure reproducible experiments, we must set random seeds.
 np.random.seed(42)
@@ -136,10 +136,12 @@ def main():
             wandb.save(best_model_path)
             print("Best model also uploaded to W&B")
     # Hide lines above until Lab 5
-    if enable_test:
-      SegModel(best_model_path)
+    if enable_test and args.wandb:
+      model = SegModel(best_model_path)
       dataset = vars(args).get("dataset", None)
-      run_inference(dataset, )
+      run_inference(dataset, model=model, basedir=wandb.run.dir)
+      score, _ = scoring.score_predictions(dataset, basedir=wandb.run.dir)
+      wandb.config.update(score)
 
 if __name__ == "__main__":
     main()
