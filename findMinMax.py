@@ -42,6 +42,5 @@ for i, f in enumerate(files):
     histos[i] = np.histogram(elevation, bins=bins)[0]
 
 np.savetxt(f"elev_dist_{folder}.dat", np.column_stack((bins[:-1]+(bins[1]-bins[0])/2, np.mean(histos, axis=0))), header="#maximum = {maximum}\n#minimum = {minimum}", comments="")
-# test comment
 
 
