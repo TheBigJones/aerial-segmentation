@@ -2,8 +2,10 @@ from PIL import Image
 import numpy as np
 import math
 import os
+import torch
 
 from data.config import train_ids, test_ids, val_ids, LABELMAP_RGB
+from data import transforms
 
 def category2mask(img):
     """ Convert a category image to color mask """
@@ -34,7 +36,7 @@ def chips_from_image(img, size=300):
             chips.append((chip, x, y))
     return chips
 
-def run_inference_on_file(imagefile, predsfile, model, size=300):
+def run_inference_on_file(imagefile, predsfile, model, transform, size=300):
     with Image.open(imagefile).convert('RGB') as img:
         nimg = np.array(Image.open(imagefile).convert('RGB'))
         shape = nimg.shape
@@ -42,10 +44,19 @@ def run_inference_on_file(imagefile, predsfile, model, size=300):
 
     chips = [(chip, xi, yi) for chip, xi, yi in chips if chip.sum() > 0]
     prediction = np.zeros(shape[:2], dtype='uint8')
-    chip_preds = model.predict(np.array([chip for chip, _, _ in chips]), verbose=True)
+    #inp = transform(np.transpose(np.array([chip for chip, _, _ in chips]), (0, 3, 1, 2)), np.zeros((len(chips), size, size)))
+    #print(transform(np.transpose(np.array(chips[0]), (0, 1, 2)), np.zeros((size, size)))[0])
+    #print("#"*20)
+    inp = torch.stack([transform(np.transpose(np.array(chip), (0, 1, 2)), np.zeros((size, size)))[0] for chip, _, _ in chips])
+
+    print(inp.shape)
+
+    chip_preds = model.predict(inp)
+
+    print(chip_preds.shape)
 
     for (chip, x, y), pred in zip(chips, chip_preds):
-        category_chip = np.argmax(pred, axis=-1) + 1
+        category_chip = np.argmax(pred, axis=-3) + 1
         section = prediction[y:y+size, x:x+size].shape
         prediction[y:y+size, x:x+size] = category_chip[:section[0], :section[1]]
 
@@ -58,6 +69,10 @@ def run_inference(dataset, model=None, basedir='predictions'):
     if model is None:
         raise Exception("model is required")
 
+
+    transforms_list = [transforms.ToTensor(), transforms.Normalize(mean=[0.485, 0.456, 0.406],std=[0.229, 0.224, 0.225])]
+    transform = transforms.Compose(transforms_list)
+
     for scene in train_ids + val_ids + test_ids:
         imagefile = f'{dataset}/images/{scene}-ortho.tif'
         predsfile = os.path.join(basedir, f'{scene}-prediction.png')
@@ -66,4 +81,5 @@ def run_inference(dataset, model=None, basedir='predictions'):
             continue
 
         print(f'running inference on image {imagefile}.')
-        run_inference_on_file(imagefile, predsfile, model)
+        print(f'saving prediction to {predsfile}.')
+        run_inference_on_file(imagefile, predsfile, model, transform)
