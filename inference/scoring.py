@@ -1,7 +1,7 @@
 import os
 import cv2
 
-from libs.config import LABELS, INV_LABELMAP, test_ids
+from data.config import LABELS, INV_LABELMAP, test_ids
 
 from sklearn.metrics import confusion_matrix
 from sklearn.utils.multiclass import unique_labels
