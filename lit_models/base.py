@@ -3,6 +3,7 @@ import pytorch_lightning as pl
 import torch
 import torchmetrics
 import numpy as np
+import torch.nn.functional as F
 
 try:
     import wandb
@@ -272,3 +273,6 @@ class BaseLitModel(pl.LightningModule):  # pylint: disable=too-many-ancestors
         self.log("test_f1", self.test_f1, on_step=False, on_epoch=True)
         self.test_acc(logits, y)
         self.log("test_acc", self.test_acc, on_step=False, on_epoch=True)
+
+
+

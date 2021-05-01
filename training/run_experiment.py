@@ -8,7 +8,8 @@ import pytorch_lightning as pl
 import wandb
 
 import lit_models
-import data.inference as inference
+
+from inference import run_inference, SegModel, score_predictions
 
 # In order to ensure reproducible experiments, we must set random seeds.
 np.random.seed(42)
@@ -127,12 +128,6 @@ def main():
     trainer.tune(lit_model, datamodule=data)
 
     trainer.fit(lit_model, datamodule=data)
-    if enable_test:
-        trainer.test(lit_model, datamodule=data)
-
-    if predict:
-        inference.run_inference("dataset-sample", lit_model)
-
     # pylint: enable=no-member
 
     # Hide lines below until Lab 5
@@ -143,7 +138,13 @@ def main():
             wandb.save(best_model_path)
             print("Best model also uploaded to W&B")
     # Hide lines above until Lab 5
-
+    if enable_test and args.wandb:
+      model = SegModel(checkpoint_path=best_model_path, model=model, args=args)
+      dataset = vars(args).get("dataset", None)
+      run_inference(dataset, model=model, basedir=wandb.run.dir)
+      score, _ = score_predictions(dataset, basedir=wandb.run.dir)
+      wandb.config.update(score)
+      wandb.summary.update(score)
 
 if __name__ == "__main__":
     main()

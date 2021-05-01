@@ -8,3 +8,5 @@ scipy
 opencv-python
 segmentation-models-pytorch
 torchmetrics
+sklearn
+matplotlib
