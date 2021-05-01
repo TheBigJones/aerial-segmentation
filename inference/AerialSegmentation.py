@@ -1,4 +1,5 @@
 from models.unet import Unet
+from lit_models import BaseLitModel
 
 class SegModel:
   """
