@@ -137,7 +137,7 @@ def main():
             print("Best model also uploaded to W&B")
     # Hide lines above until Lab 5
     if enable_test and args.wandb:
-      model = SegModel(best_model_path)
+      model = SegModel(checkpoint_path=best_model_path, model=model, args=args)
       dataset = vars(args).get("dataset", None)
       run_inference(dataset, model=model, basedir=wandb.run.dir)
       score, _ = scoring.score_predictions(dataset, basedir=wandb.run.dir)
