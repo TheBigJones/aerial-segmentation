@@ -11,6 +11,7 @@ import lit_models
 
 from inference import run_inference, SegModel, score_predictions
 
+
 # In order to ensure reproducible experiments, we must set random seeds.
 np.random.seed(42)
 torch.manual_seed(42)
@@ -125,7 +126,7 @@ def main():
     # If passing --auto_lr_find, this will set learning rate
     trainer.tune(lit_model, datamodule=data)
 
-    trainer.fit(lit_model, datamodule=data)        
+    trainer.fit(lit_model, datamodule=data)
     # pylint: enable=no-member
 
     # Hide lines below until Lab 5
@@ -140,8 +141,9 @@ def main():
       model = SegModel(checkpoint_path=best_model_path, model=model, args=args)
       dataset = vars(args).get("dataset", None)
       run_inference(dataset, model=model, basedir=wandb.run.dir)
-      score, _ = scoring.score_predictions(dataset, basedir=wandb.run.dir)
+      score, _ = score_predictions(dataset, basedir=wandb.run.dir)
       wandb.config.update(score)
+      wandb.summary.update(score)
 
 if __name__ == "__main__":
     main()
