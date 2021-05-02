@@ -14,6 +14,7 @@ class SegModel:
             )
         self.lit_model.eval()
         #self.scripted_model = self.lit_model.to_torchscript(method="script", file_path=None)
+        self.model = model
 
     @torch.no_grad()
     def predict(self, images):
@@ -22,4 +23,6 @@ class SegModel:
         """
         #logits = self.scripted_model(images)
         logits = self.lit_model(images)
+        if self.model.predict_elevation:
+            logits, elevation = torch.split(logits, self.model.num_classes-1, dim = -3)
         return logits
