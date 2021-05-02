@@ -9,6 +9,7 @@ command:
   - "vflip"
   - "rotate"
   - "--read_config"
+  - "--enable_test"
 program: training/run_experiment.py
 method: bayes
 project: aerialsegmenation-sweeps
