@@ -44,7 +44,6 @@ def _setup_parser():
     parser.add_argument("--load_checkpoint", type=str, default=None)
     parser.add_argument("--enable_test", action="store_true", default=False)
     parser.add_argument("--patience", type=int, default=PATIENCE)
-    parser.add_argument("--predict", action="store_true", default=False)
 
     parser.add_argument("--elevation_alpha", type=float, default=0.0)
 
@@ -82,7 +81,6 @@ def main():
     model = model_class(data_config=data.config(), args=args)
 
     enable_test = vars(args).get("enable_test", False)
-    predict = vars(args).get("predict", False)
     patience = vars(args).get("patience", PATIENCE)
 
     if args.loss not in ("ctc", "transformer"):
