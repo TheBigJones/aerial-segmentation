@@ -36,7 +36,7 @@ def chips_from_image(img, size=300):
             chips.append((chip, x, y))
     return chips
 
-def run_inference_on_file(imagefile, predsfile, model, transform, size=300):
+def run_inference_on_file(imagefile, predsfile, model, transform, size=300, batchsize=64):
     with Image.open(imagefile).convert('RGB') as img:
         nimg = np.array(Image.open(imagefile).convert('RGB'))
         shape = nimg.shape
@@ -51,7 +51,13 @@ def run_inference_on_file(imagefile, predsfile, model, transform, size=300):
 
     print(inp.shape)
 
-    chip_preds = model.predict(inp)
+    num_batches = (len(inp) + batchsize -1) // batchsize
+
+    chip_preds_list = []
+    for j in range(num_batches):
+        chip_preds_list.append(model.predict(inp[j*batchsize : min((j+1)*batchsize, len(inp))]))
+
+    chip_preds = torch.cat(tuple(chip_preds_list))
 
     print(chip_preds.shape)
 
@@ -73,7 +79,8 @@ def run_inference(dataset, model=None, basedir='predictions'):
     transforms_list = [transforms.ToTensor(), transforms.Normalize(mean=[0.485, 0.456, 0.406],std=[0.229, 0.224, 0.225])]
     transform = transforms.Compose(transforms_list)
 
-    for scene in train_ids + val_ids + test_ids:
+    #for scene in train_ids + val_ids + test_ids:
+    for scene in test_ids:
         imagefile = f'{dataset}/images/{scene}-ortho.tif'
         predsfile = os.path.join(basedir, f'{scene}-prediction.png')
 
