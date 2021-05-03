@@ -144,6 +144,8 @@ class BaseLitModel(pl.LightningModule):  # pylint: disable=too-many-ancestors
             self.loss_fn.__init__(weight=self.loss_weights)
 
 
+        self.fgsm_epsilon = self.args.get("fgsm_epsilon", -1.0)
+
         self.elevation_alpha = self.args.get("elevation_alpha", 0.0)
         self.predict_elevation = (self.elevation_alpha > 0.0)
         if self.predict_elevation:
@@ -171,6 +173,7 @@ class BaseLitModel(pl.LightningModule):  # pylint: disable=too-many-ancestors
         parser.add_argument("--loss", type=str, default=LOSS, help="loss function from torch.nn.functional")
         parser.add_argument("--mask_loss", action="store_true", default=False, help="masks ignores from target in lass-calculation")
         parser.add_argument("--max_imgs", type=int, default=MAX_IMGS, help="Maximum number of images to log")
+        parser.add_argument("--fgsm_epsilon", type=float, default=-1.0, help="Epsilon for FGSM attack. epsilon <=0.0 means no attack.")
         return parser
 
     def configure_optimizers(self):
@@ -188,6 +191,37 @@ class BaseLitModel(pl.LightningModule):  # pylint: disable=too-many-ancestors
     def calc_loss(self, logits, y):
         loss = self.loss_fn(logits, y)
         return loss
+
+    def fgsm_attack(self, images, labels, elevation_label=None):
+
+        images.requires_grad = True
+
+        logits = self(images)
+        if self.predict_elevation:
+            elevation = torch.squeeze(logits[:, self.num_classes:, :, :])
+            logits = logits[:, :self.num_classes, :, :]
+
+        fgsm_loss = self.calc_loss(logits, labels)
+        if self.predict_elevation:
+            fgsm_loss += self.elevation_alpha*self.elevation_loss(elevation, elevation_label)
+
+        # Create perturbed images
+        sign_data_grad = images.sign()
+        perturbed_images = images + self.fgsm_epsilon*sign_data_grad
+        perturbed_images = torch.clamp(perturbed_images, 0, 1).detach()
+
+        # Calculate loss on perturbed images
+        logits = self(perturbed_images)
+        if self.predict_elevation:
+            elevation = torch.squeeze(logits[:, self.num_classes:, :, :])
+            logits = logits[:, :self.num_classes, :, :]
+
+        fgsm_loss = self.calc_loss(logits, labels)
+        if self.predict_elevation:
+            fgsm_loss += self.elevation_alpha*self.elevation_loss(elevation, elevation_label)
+
+        return fgsm_loss
+
 
     def training_step(self, batch, batch_idx):  # pylint: disable=unused-argument
         if self.predict_elevation:
@@ -209,6 +243,14 @@ class BaseLitModel(pl.LightningModule):  # pylint: disable=too-many-ancestors
         self.log("train_f1", self.train_f1, on_step=False, on_epoch=True)
         self.train_acc(logits, y)
         self.log("train_acc", self.train_acc, on_step=False, on_epoch=True)
+
+
+        if self.fgsm_epsilon >= 0.0:
+            if self.predict_elevation:
+                loss += self.fgsm_attack(images=x, labels=y, elevation_label=z)
+            else:
+                loss += self.fgsm_attack(images=x, labels=y)
+
         return loss
 
     def validation_step(self, batch, batch_idx):  # pylint: disable=unused-argument
