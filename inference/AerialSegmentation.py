@@ -2,6 +2,7 @@ from models.unet import Unet
 from lit_models import BaseLitModel
 import pytorch_lightning as pl
 import torch
+import torch.nn.functional as F
 
 class SegModel:
     """
@@ -25,4 +26,5 @@ class SegModel:
         logits = self.lit_model(images)
         if self.model.predict_elevation:
             logits, elevation = torch.split(logits, self.model.num_classes-1, dim = -3)
-        return logits
+        preds = F.softmax(logits, dim=-3)
+        return preds

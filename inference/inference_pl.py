@@ -24,8 +24,9 @@ def category2mask(img):
 def chips_from_image(img, size=300, stride=1):
     shape = img.shape
     chips = []
-    for x in range(0, shape[1], int(size/stride)):
-        for y in range(0, shape[0], int(size/stride)):
+    
+    for x in range(0, shape[1], size//stride):
+        for y in range(0, shape[0], size//stride):
             chip = img[y:y+size, x:x+size, :]
             y_pad = size - chip.shape[0]
             x_pad = size - chip.shape[1]
@@ -44,7 +45,7 @@ def run_inference_on_file(imagefile, predsfile, model, transform, size=300, batc
     
     num_classes = model.model.num_classes + 1 
     chips = [(chip, xi, yi) for chip, xi, yi in chips if chip.sum() > 0]
-    prediction = np.zeros((num_classes, shape[0], shape[1]), dtype='uint8')
+    prediction = np.zeros((num_classes, shape[0], shape[1]))
     #inp = transform(np.transpose(np.array([chip for chip, _, _ in chips]), (0, 3, 1, 2)), np.zeros((len(chips), size, size)))
     #print(transform(np.transpose(np.array(chips[0]), (0, 1, 2)), np.zeros((size, size)))[0])
     #print("#"*20)
@@ -55,10 +56,11 @@ def run_inference_on_file(imagefile, predsfile, model, transform, size=300, batc
 
     chip_preds_list = []
     for j in range(num_batches):
+        # last batch can smaller than batchsize 
+        size_batch = min((j+1)*batchsize, len(inp)) - j*batchsize
         batch_preds = model.predict(inp[j*batchsize : min((j+1)*batchsize, len(inp))].to(device))
-        ignores_tensor = torch.zeros(batchsize, 1, inp.shape[2], inp.shape[3])
+        ignores_tensor = torch.zeros(size_batch, 1, inp.shape[2], inp.shape[3])
         batch_preds_with_ignore = torch.cat((ignores_tensor,batch_preds.to("cpu")), -3)
-        print(batch_preds_with_ignore.shape)
         chip_preds_list.append(batch_preds_with_ignore)
 
     chip_preds = torch.cat(tuple(chip_preds_list))
