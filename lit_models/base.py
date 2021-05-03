@@ -47,6 +47,9 @@ class FocalTverskyLoss(pl.LightningModule):
 
         return FocalTversky
 
+class F1Loss(FocalTverskyLoss):
+    def __init__(self, num_classes, weight=None, size_average=True, smooth=0.0):
+        super().__init__(num_classes, weight, size_average, smooth, 0.5, 0.5, 1.0)
 
 class Accuracy(torchmetrics.Accuracy):
     """Accuracy Metric with a hack."""
@@ -130,11 +133,16 @@ class BaseLitModel(pl.LightningModule):  # pylint: disable=too-many-ancestors
             self.loss_weights[self.ignore_index] = 0.
 
         loss = self.args.get("loss", LOSS)
-        if loss not in ("tversky"):
+        if loss == "tversky":
+            self.loss_fn = FocalTverskyLoss(self.num_classes)
+        elif loss == "tversky_high_gamma":
+            self.loss_fn = FocalTverskyLoss(self.num_classes, gamma=1.5)
+        elif loss == "f1":
+            self.loss_fn = F1Loss(self.num_classes)
+        else:
             self.loss_fn = getattr(torch.nn.functional, loss)
             self.loss_fn.__init__(weight=self.loss_weights)
-        elif loss == "tversky":
-            self.loss_fn = FocalTverskyLoss(self.num_classes)
+
 
         self.elevation_alpha = self.args.get("elevation_alpha", 0.0)
         self.predict_elevation = (self.elevation_alpha > 0.0)
@@ -273,6 +281,3 @@ class BaseLitModel(pl.LightningModule):  # pylint: disable=too-many-ancestors
         self.log("test_f1", self.test_f1, on_step=False, on_epoch=True)
         self.test_acc(logits, y)
         self.log("test_acc", self.test_acc, on_step=False, on_epoch=True)
-
-
-
