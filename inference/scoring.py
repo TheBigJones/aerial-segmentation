@@ -8,6 +8,8 @@ from sklearn.utils.multiclass import unique_labels
 from sklearn.metrics import f1_score, precision_score, recall_score
 
 import matplotlib.pyplot as plt
+import matplotlib
+matplotlib.use('Agg')
 import numpy as np
 
 
