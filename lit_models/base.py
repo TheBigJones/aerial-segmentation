@@ -32,8 +32,8 @@ class FocalTverskyLoss(pl.LightningModule):
         self.num_classes = num_classes
 
     def forward(self, preds: torch.Tensor, targets: torch.Tensor):
-        if preds.min() < 0 or preds.max() > 1:
-            preds = torch.nn.functional.softmax(preds, dim=1)
+        #if preds.min() < 0 or preds.max() > 1:
+        preds = torch.nn.functional.softmax(preds, dim=1)
 
         targets = to_onehot(targets, self.num_classes)
 
@@ -62,8 +62,8 @@ class Accuracy(torchmetrics.Accuracy):
         This method just hacks around it by normalizing preds before passing it in.
         Normalized preds are not necessary for accuracy computation as we just care about argmax().
         """
-        if preds.min() < 0 or preds.max() > 1:
-            preds = torch.nn.functional.softmax(preds, dim=1)
+        #if preds.min() < 0 or preds.max() > 1:
+        preds = torch.nn.functional.softmax(preds, dim=1)
         super().update(preds=preds, target=target)
 
 
@@ -78,8 +78,8 @@ class IoU(torchmetrics.IoU):
         This method just hacks around it by normalizing preds before passing it in.
         Normalized preds are not necessary for accuracy computation as we just care about argmax().
         """
-        if preds.min() < 0 or preds.max() > 1:
-            preds = torch.nn.functional.softmax(preds, dim=1)
+        #if preds.min() < 0 or preds.max() > 1:
+        preds = torch.nn.functional.softmax(preds, dim=1)
         super().update(preds=preds, target=target)
 
 
@@ -94,8 +94,8 @@ class F1(torchmetrics.F1):
         This method just hacks around it by normalizing preds before passing it in.
         Normalized preds are not necessary for accuracy computation as we just care about argmax().
         """
-        if preds.min() < 0 or preds.max() > 1:
-            preds = torch.nn.functional.softmax(preds, dim=1)
+        #if preds.min() < 0 or preds.max() > 1:
+        preds = torch.nn.functional.softmax(preds, dim=1)
         super().update(preds=preds, target=target)
 
 
