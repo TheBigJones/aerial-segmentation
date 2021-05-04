@@ -146,6 +146,8 @@ class BaseLitModel(pl.LightningModule):  # pylint: disable=too-many-ancestors
 
         self.fgsm_epsilon = self.args.get("fgsm_epsilon", -1.0)
 
+        self.weight_decay = self.args.get("weight_decay", None)
+
         self.elevation_alpha = self.args.get("elevation_alpha", 0.0)
         self.predict_elevation = (self.elevation_alpha > 0.0)
         if self.predict_elevation:
@@ -174,10 +176,14 @@ class BaseLitModel(pl.LightningModule):  # pylint: disable=too-many-ancestors
         parser.add_argument("--mask_loss", action="store_true", default=False, help="masks ignores from target in lass-calculation")
         parser.add_argument("--max_imgs", type=int, default=MAX_IMGS, help="Maximum number of images to log")
         parser.add_argument("--fgsm_epsilon", type=float, default=-1.0, help="Epsilon for FGSM attack. epsilon <=0.0 means no attack.")
+        parser.add_argument("--weight_decay", type=float, default=None, help="Weight decay for optimizer.")
         return parser
 
     def configure_optimizers(self):
-        optimizer = self.optimizer_class(self.parameters(), lr=self.lr)
+        if self.weight_decay is None:
+            optimizer = self.optimizer_class(self.parameters(), lr=self.lr)
+        else:
+            optimizer = self.optimizer_class(self.parameters(), lr=self.lr, weight_decay=self.weight_decay)
         if self.one_cycle_max_lr is None:
             return optimizer
         scheduler = torch.optim.lr_scheduler.OneCycleLR(
