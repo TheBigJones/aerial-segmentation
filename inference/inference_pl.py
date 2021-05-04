@@ -3,6 +3,7 @@ import numpy as np
 import math
 import os
 import torch
+import sparse
 
 from data.config import train_ids, test_ids, val_ids, LABELMAP_RGB
 from data import transforms
@@ -34,45 +35,36 @@ def chips_from_image(img, size=300, stride=1):
             chips.append((chip, x, y))
     return chips
 
-def run_inference_on_file(imagefile, predsfile, model, transform, size=300, batchsize=64, stride=2):
+def run_inference_on_file(imagefile, predsfile, model, transform, size=300, batchsize=16, stride=2):
     device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu") 
     model.model.to(device)
- 
+    # TODO: How to reduce mem consumption of the inference run on large drone images?
     with Image.open(imagefile).convert('RGB') as img:
         nimg = np.array(Image.open(imagefile).convert('RGB'))
         shape = nimg.shape
         chips = chips_from_image(nimg, size=size, stride=stride)
     
-    num_classes = model.model.num_classes + 1 
-    chips = [(chip, xi, yi) for chip, xi, yi in chips if chip.sum() > 0]
+    num_classes = model.model.num_classes
     prediction = np.zeros((num_classes, shape[0], shape[1]))
-    #inp = transform(np.transpose(np.array([chip for chip, _, _ in chips]), (0, 3, 1, 2)), np.zeros((len(chips), size, size)))
-    #print(transform(np.transpose(np.array(chips[0]), (0, 1, 2)), np.zeros((size, size)))[0])
-    #print("#"*20)
-    inp = torch.stack([transform(np.transpose(np.array(chip), (0, 1, 2)), np.zeros((size, size)))[0] for chip, _, _ in chips])
-    # print("Prediction Shape: ",prediction.shape)
-    # print("Input Shape: ",inp.shape)
-    num_batches = (len(inp) + batchsize -1) // batchsize
+    chips = [(chip, xi, yi) for chip, xi, yi in chips if chip.sum() > 0]
+    
+    num_batches = (len(chips) + batchsize -1) // batchsize
 
     chip_preds_list = []
     for j in range(num_batches):
         # last batch can smaller than batchsize 
-        size_batch = min((j+1)*batchsize, len(inp)) - j*batchsize
-        batch_preds = model.predict(inp[j*batchsize : min((j+1)*batchsize, len(inp))].to(device))
-        ignores_tensor = torch.zeros(size_batch, 1, inp.shape[2], inp.shape[3])
-        batch_preds_with_ignore = torch.cat((ignores_tensor,batch_preds.to("cpu")), -3)
-        chip_preds_list.append(batch_preds_with_ignore)
+        size_batch = min((j+1)*batchsize, len(chips)) - j*batchsize
+        inp = torch.stack([transform(np.transpose(np.array(chip), (0, 1, 2)), np.zeros((size, size)))[0] for chip, _, _ in chips[j*batchsize : min((j+1)*batchsize, len(chips))]]).to(device)
+        batch_preds = model.predict(inp)
+        chip_preds_list.append(batch_preds.to("cpu"))
 
     chip_preds = torch.cat(tuple(chip_preds_list))
 
-    # print("Chipped Predictions Shape: ",chip_preds.shape)
-
     for (chip, x, y), pred in zip(chips, chip_preds):
-        # print("X: ", x, "/Y: ", y)
         section = prediction[0, y:y+size, x:x+size].shape
-        # print("Section Shape", section)
         prediction[:, y:y+size, x:x+size] = np.add(prediction[:, y:y+size, x:x+size], pred[:, :section[0], :section[1]])
-    prediction = np.argmax(prediction, axis=-3)
+       
+    prediction = np.argmax(prediction, axis=-3) + 1
     mask = category2mask(prediction)
     Image.fromarray(mask).save(predsfile)
 
