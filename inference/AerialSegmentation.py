@@ -3,6 +3,7 @@ from lit_models import BaseLitModel
 import pytorch_lightning as pl
 import torch
 import torch.nn.functional as F
+import math
 
 class SegModel:
     """
@@ -16,6 +17,11 @@ class SegModel:
         self.lit_model.eval()
         #self.scripted_model = self.lit_model.to_torchscript(method="script", file_path=None)
         self.model = model
+
+    def set_image_size(self, image_size):
+        encoder_depth = self.model.args["encoder_depth"]
+        self.model.image_size = image_size
+        self.model.padding = (math.ceil(self.model.image_size / 2**(encoder_depth))*2**(encoder_depth)-self.model.image_size)//2
 
     @torch.no_grad()
     def predict(self, images):
