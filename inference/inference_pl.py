@@ -26,7 +26,7 @@ def category2mask(img):
 def chips_from_image(img, size=300, stride=1):
     shape = img.shape
     chips = []
-    
+
     for x in range(0, shape[1], size//stride):
         for y in range(0, shape[0], size//stride):
             chip = img[y:y+size, x:x+size, :]
@@ -37,28 +37,30 @@ def chips_from_image(img, size=300, stride=1):
     return chips
 
 def run_inference_on_file(imagefile, predsfile, model, transform, size=300, batchsize=16, stride=1, smoothing = False):
-    device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu") 
+    device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
     model.model.to(device)
+
+    model.set_image_size(size)
 
     with Image.open(imagefile).convert('RGB') as img:
         nimg = np.array(Image.open(imagefile).convert('RGB'))
         shape = nimg.shape
         chips = chips_from_image(nimg, size=size, stride=stride)
-    
+
     num_classes = model.model.num_classes
     prediction = np.zeros((num_classes, shape[0], shape[1]))
     chips = [(chip, xi, yi) for chip, xi, yi in chips if chip.sum() > 0]
     # std chosen empirically
     if smoothing:
       smoothing_kernel = signal.gaussian(size, std=int(size/6)).reshape(size, 1)
-      smoothing_kernel = np.outer(smoothing_kernel, smoothing_kernel) 
+      smoothing_kernel = np.outer(smoothing_kernel, smoothing_kernel)
     else:
       smoothing_kernel = np.ones((size, size))
     num_batches = (len(chips) + batchsize -1) // batchsize
 
     chip_preds_list = []
     for j in range(num_batches):
-      # last batch can be smaller than batchsize 
+      # last batch can be smaller than batchsize
       size_batch = min((j+1)*batchsize, len(chips)) - j*batchsize
       batch_chips = chips[j*batchsize : min((j+1)*batchsize, len(chips))]
       inp = torch.stack([transform(np.transpose(np.array(chip), (0, 1, 2)), np.zeros((size, size)))[0] for chip, _, _ in batch_chips]).to(device)
@@ -67,14 +69,14 @@ def run_inference_on_file(imagefile, predsfile, model, transform, size=300, batc
       for (chip, x, y), pred in zip(batch_chips, batch_preds):
           section = prediction[0, y:y+size, x:x+size].shape
           prediction[:, y:y+size, x:x+size] = np.add(prediction[:, y:y+size, x:x+size], pred[:, :section[0], :section[1]]*smoothing_kernel[:section[0], :section[1]])
-    
+
     ignore_mask = np.sum(prediction, axis =-3) > 0.0
     prediction = np.argmax(prediction, axis=-3)
-    prediction[ignore_mask] += 1  
+    prediction[ignore_mask] += 1
     mask = category2mask(prediction)
     Image.fromarray(mask).save(predsfile)
 
-def run_inference(dataset, model=None, basedir='predictions', stride=1, smoothing=False):
+def run_inference(dataset, model=None, basedir='predictions', stride=1, smoothing=False, size=300):
     if not os.path.isdir(basedir):
         os.mkdir(basedir)
     if model is None:
@@ -94,4 +96,4 @@ def run_inference(dataset, model=None, basedir='predictions', stride=1, smoothin
 
         print(f'running inference on image {imagefile}.')
         print(f'saving prediction to {predsfile}.')
-        run_inference_on_file(imagefile, predsfile, model, transform, stride=stride, smoothing=smoothing)
+        run_inference_on_file(imagefile, predsfile, model, transform, stride=stride, smoothing=smoothing, size=size)

@@ -44,6 +44,7 @@ def _setup_parser():
     parser.add_argument("--load_checkpoint", type=str, default=None)
     parser.add_argument("--enable_test", action="store_true", default=False)
     parser.add_argument("--patience", type=int, default=PATIENCE)
+    parser.add_argument("--inference_size", type=int, default=300)
 
     parser.add_argument("--elevation_alpha", type=float, default=0.0)
 
@@ -139,7 +140,8 @@ def main():
     if enable_test and args.wandb:
       model = SegModel(checkpoint_path=best_model_path, model=model, args=args)
       dataset = vars(args).get("dataset", None)
-      run_inference(dataset, model=model, basedir=wandb.run.dir, stride=2, smoothing=True)
+      inference_size = vars(args).get("inference_size", 300)
+      run_inference(dataset, model=model, basedir=wandb.run.dir, stride=2, smoothing=False, size=inference_size)
       score, _ = score_predictions(dataset, basedir=wandb.run.dir)
       wandb.config.update(score)
       wandb.summary.update(score)
