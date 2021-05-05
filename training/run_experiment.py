@@ -139,7 +139,7 @@ def main():
     if enable_test and args.wandb:
       model = SegModel(checkpoint_path=best_model_path, model=model, args=args)
       dataset = vars(args).get("dataset", None)
-      run_inference(dataset, model=model, basedir=wandb.run.dir)
+      run_inference(dataset, model=model, basedir=wandb.run.dir, stride=2, smoothing=True)
       score, _ = score_predictions(dataset, basedir=wandb.run.dir)
       wandb.config.update(score)
       wandb.summary.update(score)
