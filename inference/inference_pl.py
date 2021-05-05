@@ -151,6 +151,8 @@ def run_cascading_inference_on_file(imagefile, predsfile, model, transform, size
                 prediction_classes = np.argmax(current_prediction, axis=-3)
                 # Cast to tensor to use PyTorch one_hot-function, cast back to numpy and transpose, because one-hot expands at the back of the array
                 current_prediction = torch.nn.functional.one_hot(torch.from_numpy(prediction_classes), num_classes=num_classes).numpy().transpose(2,0,1)
+            else:
+                current_prediction = current_prediction/(1. + alpha)
 
 
         current_prediction = np.argmax(current_prediction, axis=-3)
