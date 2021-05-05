@@ -50,21 +50,33 @@ def predict_on_chips(model, chips, size, shape, transform, batchsize = 16, smoot
     if smoothing:
         smoothing_kernel = signal.gaussian(size, std=int(size/6)).reshape(size, 1)
         smoothing_kernel = np.outer(smoothing_kernel, smoothing_kernel)
-    else:
-        smoothing_kernel = np.ones((size, size))
     num_batches = (len(chips) + batchsize -1) // batchsize
 
     chip_preds_list = []
-    for j in range(num_batches):
-        # last batch can be smaller than batchsize
-        size_batch = min((j+1)*batchsize, len(chips)) - j*batchsize
-        batch_chips = chips[j*batchsize : min((j+1)*batchsize, len(chips))]
-        inp = torch.stack([transform(np.transpose(np.array(chip), (0, 1, 2)), np.zeros((size, size)))[0] for chip, _, _ in batch_chips]).to(device)
-        batch_preds = model.predict(inp)
-        batch_preds = batch_preds.to("cpu")
-        for (chip, x, y), pred in zip(batch_chips, batch_preds):
-            section = prediction[0, y:y+size, x:x+size].shape
-            prediction[:, y:y+size, x:x+size] = np.add(prediction[:, y:y+size, x:x+size], pred[:, :section[0], :section[1]]*smoothing_kernel[:section[0], :section[1]])
+
+    if smoothing:
+        for j in range(num_batches):
+            # last batch can be smaller than batchsize
+            size_batch = min((j+1)*batchsize, len(chips)) - j*batchsize
+            batch_chips = chips[j*batchsize : min((j+1)*batchsize, len(chips))]
+            inp = torch.stack([transform(np.transpose(np.array(chip), (0, 1, 2)), np.zeros((size, size)))[0] for chip, _, _ in batch_chips]).to(device)
+            batch_preds = model.predict(inp)
+            batch_preds = batch_preds.to("cpu")
+            for (chip, x, y), pred in zip(batch_chips, batch_preds):
+                section = prediction[0, y:y+size, x:x+size].shape
+                prediction[:, y:y+size, x:x+size] = np.add(prediction[:, y:y+size, x:x+size], pred[:, :section[0], :section[1]]*smoothing_kernel[:section[0], :section[1]])
+    else:
+        for j in range(num_batches):
+            # last batch can be smaller than batchsize
+            size_batch = min((j+1)*batchsize, len(chips)) - j*batchsize
+            batch_chips = chips[j*batchsize : min((j+1)*batchsize, len(chips))]
+            inp = torch.stack([transform(np.transpose(np.array(chip), (0, 1, 2)), np.zeros((size, size)))[0] for chip, _, _ in batch_chips]).to(device)
+            batch_preds = model.predict(inp)
+            batch_preds = batch_preds.to("cpu")
+            for (chip, x, y), pred in zip(batch_chips, batch_preds):
+                section = prediction[0, y:y+size, x:x+size].shape
+                prediction[:, y:y+size, x:x+size] = np.add(prediction[:, y:y+size, x:x+size], pred[:, :section[0], :section[1]])
+
 
     return prediction
 
