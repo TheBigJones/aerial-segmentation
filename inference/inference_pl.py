@@ -5,6 +5,7 @@ import os
 import torch
 
 from scipy import signal
+from scipy.ndimage import interpolation
 
 from data.config import train_ids, test_ids, val_ids, LABELMAP_RGB
 from data import transforms
@@ -81,6 +82,66 @@ def run_inference_on_file(imagefile, predsfile, model, transform, size=300, batc
     mask = category2mask(prediction)
     Image.fromarray(mask).save(predsfile)
 
+def SDIV(x,y):
+    return int((x+y-1)/y)
+
+def valid_pixels(image):
+    mask = np.sum(np.array(image.convert('RGB')), axis = -1) > 0.0
+    return mask
+
+
+def run_cascading_inference_on_file(imagefile, predsfile, model, transform, size=300, batchsize=16, stride=1, smoothing = False, alpha = 1./3, max_doubling_state=None, to_one_hot=True):
+    num_classes = model.model.num_classes
+    with Image.open(imagefile) as img:
+
+        valid_pixel_mask = valid_pixels(img)
+
+        original_shape = np.array(img.convert('RGB')).shape
+        current_prediction = np.zeros((num_classes, original_shape[0], original_shape[1]))
+        prediction_orig = np.zeros((num_classes, original_shape[0], original_shape[1]))
+
+        larger_dim = max(original_shape[0], original_shape[1])
+        num_doubling_states = int(math.ceil(np.log2(larger_dim / size)))
+
+        if max_doubling_state is not None:
+            num_doubling_states = min(num_doubling_states, max_doubling_state)
+
+        for d in range(num_doubling_states, -1, -1):
+            size_res_x = min(SDIV((larger_dim / 2**d), size)*size, original_shape[0])
+            size_res_y = min(SDIV((larger_dim / 2**d), size)*size, original_shape[1])
+            print(f"Predicting on image with resolution {size_res_x} x {size_res_y}")
+
+            img_res = np.array(img.convert('RGB').resize((size_res_y, size_res_x)))
+
+            shape = img_res.shape
+
+            chips = chips_from_image(img_res, size=size, stride=stride)
+
+            prediction = predict_on_chips(model, chips, size, shape, transform, batchsize = batchsize, smoothing = smoothing)
+
+            # Factors to zoom to original shape. Mind that the original image is of shape (W, H, C), while the prediction is (num_classes, W, H)
+            zoom_factors = [1, float(original_shape[0])/prediction.shape[1], float(original_shape[1])/prediction.shape[2]]
+
+            # Interpolate array to get back to original shape
+            interpolation.zoom(prediction,zoom_factors, output=prediction_orig, order=1)
+
+            # Use old prediction weighted with alpha to predict new probabilites. To be formally correct, current_prediction would have to be
+            # divided by (1+alpha) for proper normalization but as we use argmax anyway, this does not matter
+            current_prediction = alpha * current_prediction + prediction_orig
+
+            if to_one_hot:
+                prediction_classes = np.argmax(current_prediction, axis=-3)
+                # Cast to tensor to use PyTorch one_hot-function, cast back to numpy and transpose, because one-hot expands at the back of the array
+                current_prediction = torch.nn.functional.one_hot(torch.from_numpy(prediction_classes), num_classes=num_classes).numpy().transpose(2,0,1)
+
+
+        current_prediction = np.argmax(current_prediction, axis=-3)
+        current_prediction[valid_pixel_mask] += 1
+        invalid_pixel_mask = np.logical_not(valid_pixel_mask)
+        current_prediction[invalid_pixel_mask] = 0
+        mask = category2mask(current_prediction)
+        Image.fromarray(mask).resize((original_shape[1], original_shape[0]), resample=Image.NEAREST).save(predsfile)
+
 def run_inference(dataset, model=None, basedir='predictions', stride=1, smoothing=False, size=300):
     if not os.path.isdir(basedir):
         os.mkdir(basedir)
@@ -101,4 +162,4 @@ def run_inference(dataset, model=None, basedir='predictions', stride=1, smoothin
 
         print(f'running inference on image {imagefile}.')
         print(f'saving prediction to {predsfile}.')
-        run_inference_on_file(imagefile, predsfile, model, transform, stride=stride, smoothing=smoothing, size=size)
+        run_cascading_inference_on_file(imagefile, predsfile, model, transform, stride=stride, smoothing=smoothing, size=size)
