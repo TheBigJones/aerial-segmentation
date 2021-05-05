@@ -70,15 +70,17 @@ def predict_on_chips(model, chips, size, shape, transform, batchsize = 16, smoot
 
 def run_inference_on_file(imagefile, predsfile, model, transform, size=300, batchsize=16, stride=1, smoothing = False):
     with Image.open(imagefile).convert('RGB') as img:
+        valid_pixel_mask = valid_pixels(img)
         nimg = np.array(Image.open(imagefile).convert('RGB'))
         shape = nimg.shape
         chips = chips_from_image(nimg, size=size, stride=stride)
 
     prediction = predict_on_chips(model, chips, size, shape, transform, batchsize = batchsize, smoothing = smoothing)
 
-    ignore_mask = np.sum(prediction, axis =-3) > 0.0
     prediction = np.argmax(prediction, axis=-3)
-    prediction[ignore_mask] += 1
+    prediction[valid_pixel_mask] += 1
+    invalid_pixel_mask = np.logical_not(valid_pixel_mask)
+    prediction[invalid_pixel_mask] = 0
     mask = category2mask(prediction)
     Image.fromarray(mask).save(predsfile)
 
