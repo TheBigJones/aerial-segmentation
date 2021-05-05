@@ -44,6 +44,8 @@ def predict_on_chips(model, chips, size, shape, transform, batchsize = 16, smoot
     model.set_image_size(size)
 
     num_classes = model.model.num_classes
+    if model.model.predict_elevation:
+        num_classes -= 1
     prediction = np.zeros((num_classes, shape[0], shape[1]))
     chips = [(chip, xi, yi) for chip, xi, yi in chips if chip.sum() > 0]
     # std chosen empirically
@@ -106,6 +108,8 @@ def valid_pixels(image):
 
 def run_cascading_inference_on_file(imagefile, predsfile, model, transform, size=300, batchsize=16, stride=1, smoothing = False, alpha = 1./3, max_doubling_state=None, to_one_hot=True):
     num_classes = model.model.num_classes
+    if model.model.predict_elevation:
+        num_classes -= 1
     with Image.open(imagefile) as img:
 
         valid_pixel_mask = valid_pixels(img)
