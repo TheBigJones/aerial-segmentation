@@ -3,7 +3,6 @@ import numpy as np
 import math
 import os
 import torch
-import sparse
 
 from data.config import train_ids, test_ids, val_ids, LABELMAP_RGB
 from data import transforms
@@ -52,19 +51,19 @@ def run_inference_on_file(imagefile, predsfile, model, transform, size=300, batc
 
     chip_preds_list = []
     for j in range(num_batches):
-        # last batch can smaller than batchsize 
-        size_batch = min((j+1)*batchsize, len(chips)) - j*batchsize
-        inp = torch.stack([transform(np.transpose(np.array(chip), (0, 1, 2)), np.zeros((size, size)))[0] for chip, _, _ in chips[j*batchsize : min((j+1)*batchsize, len(chips))]]).to(device)
-        batch_preds = model.predict(inp)
-        chip_preds_list.append(batch_preds.to("cpu"))
-
-    chip_preds = torch.cat(tuple(chip_preds_list))
-
-    for (chip, x, y), pred in zip(chips, chip_preds):
-        section = prediction[0, y:y+size, x:x+size].shape
-        prediction[:, y:y+size, x:x+size] = np.add(prediction[:, y:y+size, x:x+size], pred[:, :section[0], :section[1]])
-       
-    prediction = np.argmax(prediction, axis=-3) + 1
+      # last batch can be smaller than batchsize 
+      size_batch = min((j+1)*batchsize, len(chips)) - j*batchsize
+      batch_chips = chips[j*batchsize : min((j+1)*batchsize, len(chips))]
+      inp = torch.stack([transform(np.transpose(np.array(chip), (0, 1, 2)), np.zeros((size, size)))[0] for chip, _, _ in batch_chips]).to(device)
+      batch_preds = model.predict(inp)
+      batch_preds = batch_preds.to("cpu")
+      for (chip, x, y), pred in zip(batch_chips, batch_preds):
+          section = prediction[0, y:y+size, x:x+size].shape
+          prediction[:, y:y+size, x:x+size] = np.add(prediction[:, y:y+size, x:x+size], pred[:, :section[0], :section[1]])
+    
+    ignore_mask = np.sum(prediction, axis =-3) > 0.0
+    prediction = np.argmax(prediction, axis=-3)
+    prediction[ignore_mask] += 1  
     mask = category2mask(prediction)
     Image.fromarray(mask).save(predsfile)
 
