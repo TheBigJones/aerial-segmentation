@@ -36,39 +36,44 @@ def chips_from_image(img, size=300, stride=1):
             chips.append((chip, x, y))
     return chips
 
-def run_inference_on_file(imagefile, predsfile, model, transform, size=300, batchsize=16, stride=1, smoothing = False):
+def predict_on_chips(model, chips, size, shape, transform, batchsize = 16, smoothing = False):
     device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
     model.model.to(device)
 
     model.set_image_size(size)
-
-    with Image.open(imagefile).convert('RGB') as img:
-        nimg = np.array(Image.open(imagefile).convert('RGB'))
-        shape = nimg.shape
-        chips = chips_from_image(nimg, size=size, stride=stride)
 
     num_classes = model.model.num_classes
     prediction = np.zeros((num_classes, shape[0], shape[1]))
     chips = [(chip, xi, yi) for chip, xi, yi in chips if chip.sum() > 0]
     # std chosen empirically
     if smoothing:
-      smoothing_kernel = signal.gaussian(size, std=int(size/6)).reshape(size, 1)
-      smoothing_kernel = np.outer(smoothing_kernel, smoothing_kernel)
+        smoothing_kernel = signal.gaussian(size, std=int(size/6)).reshape(size, 1)
+        smoothing_kernel = np.outer(smoothing_kernel, smoothing_kernel)
     else:
-      smoothing_kernel = np.ones((size, size))
+        smoothing_kernel = np.ones((size, size))
     num_batches = (len(chips) + batchsize -1) // batchsize
 
     chip_preds_list = []
     for j in range(num_batches):
-      # last batch can be smaller than batchsize
-      size_batch = min((j+1)*batchsize, len(chips)) - j*batchsize
-      batch_chips = chips[j*batchsize : min((j+1)*batchsize, len(chips))]
-      inp = torch.stack([transform(np.transpose(np.array(chip), (0, 1, 2)), np.zeros((size, size)))[0] for chip, _, _ in batch_chips]).to(device)
-      batch_preds = model.predict(inp)
-      batch_preds = batch_preds.to("cpu")
-      for (chip, x, y), pred in zip(batch_chips, batch_preds):
-          section = prediction[0, y:y+size, x:x+size].shape
-          prediction[:, y:y+size, x:x+size] = np.add(prediction[:, y:y+size, x:x+size], pred[:, :section[0], :section[1]]*smoothing_kernel[:section[0], :section[1]])
+        # last batch can be smaller than batchsize
+        size_batch = min((j+1)*batchsize, len(chips)) - j*batchsize
+        batch_chips = chips[j*batchsize : min((j+1)*batchsize, len(chips))]
+        inp = torch.stack([transform(np.transpose(np.array(chip), (0, 1, 2)), np.zeros((size, size)))[0] for chip, _, _ in batch_chips]).to(device)
+        batch_preds = model.predict(inp)
+        batch_preds = batch_preds.to("cpu")
+        for (chip, x, y), pred in zip(batch_chips, batch_preds):
+            section = prediction[0, y:y+size, x:x+size].shape
+            prediction[:, y:y+size, x:x+size] = np.add(prediction[:, y:y+size, x:x+size], pred[:, :section[0], :section[1]]*smoothing_kernel[:section[0], :section[1]])
+
+    return prediction
+
+def run_inference_on_file(imagefile, predsfile, model, transform, size=300, batchsize=16, stride=1, smoothing = False):
+    with Image.open(imagefile).convert('RGB') as img:
+        nimg = np.array(Image.open(imagefile).convert('RGB'))
+        shape = nimg.shape
+        chips = chips_from_image(nimg, size=size, stride=stride)
+
+    prediction = predict_on_chips(model, chips, size, shape, transform, batchsize = batchsize, smoothing = smoothing)
 
     ignore_mask = np.sum(prediction, axis =-3) > 0.0
     prediction = np.argmax(prediction, axis=-3)
