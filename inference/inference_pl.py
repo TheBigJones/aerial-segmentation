@@ -4,6 +4,8 @@ import math
 import os
 import torch
 
+from scipy import signal
+
 from data.config import train_ids, test_ids, val_ids, LABELMAP_RGB
 from data import transforms
 
@@ -34,10 +36,10 @@ def chips_from_image(img, size=300, stride=1):
             chips.append((chip, x, y))
     return chips
 
-def run_inference_on_file(imagefile, predsfile, model, transform, size=300, batchsize=16, stride=2):
+def run_inference_on_file(imagefile, predsfile, model, transform, size=300, batchsize=16, stride=1, smoothing = False):
     device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu") 
     model.model.to(device)
-    # TODO: How to reduce mem consumption of the inference run on large drone images?
+
     with Image.open(imagefile).convert('RGB') as img:
         nimg = np.array(Image.open(imagefile).convert('RGB'))
         shape = nimg.shape
@@ -46,7 +48,12 @@ def run_inference_on_file(imagefile, predsfile, model, transform, size=300, batc
     num_classes = model.model.num_classes
     prediction = np.zeros((num_classes, shape[0], shape[1]))
     chips = [(chip, xi, yi) for chip, xi, yi in chips if chip.sum() > 0]
-    
+    # std chosen empirically
+    if smoothing:
+      smoothing_kernel = signal.gaussian(size, std=int(size/6)).reshape(size, 1)
+      smoothing_kernel = np.outer(smoothing_kernel, smoothing_kernel) 
+    else:
+      smoothing_kernel = np.ones((size, size))
     num_batches = (len(chips) + batchsize -1) // batchsize
 
     chip_preds_list = []
@@ -59,7 +66,7 @@ def run_inference_on_file(imagefile, predsfile, model, transform, size=300, batc
       batch_preds = batch_preds.to("cpu")
       for (chip, x, y), pred in zip(batch_chips, batch_preds):
           section = prediction[0, y:y+size, x:x+size].shape
-          prediction[:, y:y+size, x:x+size] = np.add(prediction[:, y:y+size, x:x+size], pred[:, :section[0], :section[1]])
+          prediction[:, y:y+size, x:x+size] = np.add(prediction[:, y:y+size, x:x+size], pred[:, :section[0], :section[1]]*smoothing_kernel[:section[0], :section[1]])
     
     ignore_mask = np.sum(prediction, axis =-3) > 0.0
     prediction = np.argmax(prediction, axis=-3)
@@ -67,7 +74,7 @@ def run_inference_on_file(imagefile, predsfile, model, transform, size=300, batc
     mask = category2mask(prediction)
     Image.fromarray(mask).save(predsfile)
 
-def run_inference(dataset, model=None, basedir='predictions'):
+def run_inference(dataset, model=None, basedir='predictions', stride=1, smoothing=False):
     if not os.path.isdir(basedir):
         os.mkdir(basedir)
     if model is None:
@@ -87,4 +94,4 @@ def run_inference(dataset, model=None, basedir='predictions'):
 
         print(f'running inference on image {imagefile}.')
         print(f'saving prediction to {predsfile}.')
-        run_inference_on_file(imagefile, predsfile, model, transform)
+        run_inference_on_file(imagefile, predsfile, model, transform, stride=stride, smoothing=smoothing)
