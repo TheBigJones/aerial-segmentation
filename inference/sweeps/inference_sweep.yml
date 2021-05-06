@@ -1,0 +1,27 @@
+command:
+  - ${env}
+  - ${interpreter}
+  - ${program}
+  - ${args}
+program: inference/run_inference_on_split.py
+method: bayes
+project: aerialsegmenation-sweeps
+entity: team_jf
+metric:
+  goal: maximize
+  name: f1_mean
+parameters:
+  dataset:
+    value: dataset-medium
+  split:
+    value: val
+  run_id:
+    value: best_model
+  inference_type:
+    values: ["", "cascading"]
+  size:
+    values: [160, 320, 640]
+  stride:
+    values: [1, 2, 3]
+  smoothing:
+    values: [0, 1]
