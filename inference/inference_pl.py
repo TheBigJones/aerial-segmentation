@@ -162,18 +162,27 @@ def run_cascading_inference_on_file(imagefile, predsfile, model, transform, size
         mask = category2mask(current_prediction)
         Image.fromarray(mask).resize((original_shape[1], original_shape[0]), resample=Image.NEAREST).save(predsfile)
 
-def run_inference(dataset, model=None, basedir='predictions', stride=1, smoothing=False, size=300, inference_type=None):
+def run_inference(dataset, model=None, basedir='predictions', stride=1, smoothing=False, size=300, inference_type=None, split=None):
     if not os.path.isdir(basedir):
         os.mkdir(basedir)
     if model is None:
         raise Exception("model is required")
 
-
     transforms_list = [transforms.ToTensor(), transforms.Normalize(mean=[0.485, 0.456, 0.406],std=[0.229, 0.224, 0.225])]
     transform = transforms.Compose(transforms_list)
 
-    #for scene in train_ids + val_ids + test_ids:
-    for scene in test_ids:
+    if split == "train":
+      split_ids = train_ids
+    elif split == "val":
+      split_ids = val_ids
+    elif split == "test":
+      split_ids = test_ids
+    else:
+      raise Exception(f"{split} is no valid split (train, val, test)")
+
+    print(f"Running inference on {split}_split of {dataset}")
+
+    for scene in split_ids:
         imagefile = f'{dataset}/images/{scene}-ortho.tif'
         predsfile = os.path.join(basedir, f'{scene}-prediction.png')
 
@@ -184,5 +193,7 @@ def run_inference(dataset, model=None, basedir='predictions', stride=1, smoothin
         print(f'saving prediction to {predsfile}.')
         if inference_type is None:
           run_inference_on_file(imagefile, predsfile, model, transform, stride=stride, smoothing=smoothing, size=size)
-        else:
+        elif inference_type == "cascading":
           run_cascading_inference_on_file(imagefile, predsfile, model, transform, stride=stride, smoothing=smoothing, size=size)
+        else:
+          raise Exception(f"The inference_type \"{inference_type}\" is unknown")

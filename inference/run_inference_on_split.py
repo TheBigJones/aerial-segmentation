@@ -21,10 +21,10 @@ def run_inference_on_test(args: argparse.Namespace):
   inference_size = args.inference_size
   stride = args.stride
   smoothing = args.smoothing
-  
+  split = args.split
   basedir = wandb.run.dir
   model = SegModel(run_id=training_run_id)
-  run_inference(dataset, model, basedir, stride, smoothing, inference_size, inference_type)
+  run_inference(dataset, model, basedir, stride, smoothing, inference_size, inference_type, split)
   score, _ = score_predictions(dataset, basedir=basedir)
   wandb.config.update(score)
   wandb.summary.update(score)
@@ -33,6 +33,7 @@ if __name__ == "__main__":
 
   parser = argparse.ArgumentParser(description="Run inference on test set")
   parser.add_argument("--dataset", type=str, default="dataset-sample")
+  parser.add_argument("--split", type=str, default="val")
   parser.add_argument("--run_id", type=str, default="best_model")
   parser.add_argument("--inference_type", type=str, default=None)
   parser.add_argument("--inference_size", type=int, default=300)
