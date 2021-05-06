@@ -35,7 +35,7 @@ def save_model(args):
     if args.run_id == "best_model":
       runs = api.runs(f"{args.entity}/{args.project}")  # , filters={"config.data_class": args.trained_data_class})
       sorted_runs = sorted(
-          runs,
+          (run for run in runs if run.state == "finished"),
           key=lambda run: _get_summary_value(wandb_run=run, key=args.metric, default=default_metric_value),
           reverse=sort_reverse,
       )
@@ -127,7 +127,7 @@ def _setup_parser() -> argparse.ArgumentParser:
     parser.add_argument("--entity", type=str, default="team_jf")
     parser.add_argument("--project", type=str, default="aerialsegmenation")
     parser.add_argument("--trained_data_class", type=str, default="AerialData")
-    parser.add_argument("--metric", type=str, default="f1_mean")
+    parser.add_argument("--metric", type=str, default="val_f1")
     parser.add_argument("--mode", type=str, default="max")
 
     parser.add_argument("--run_id", type=str, default="best_model")
