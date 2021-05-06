@@ -96,7 +96,6 @@ def run_inference_on_file(imagefile, predsfile, model, transform, size=300, batc
     invalid_pixel_mask = np.logical_not(valid_pixel_mask)
     prediction[invalid_pixel_mask] = 0
     mask = category2mask(prediction)
-    print("saving Image")
     Image.fromarray(mask).save(predsfile)
 
 def SDIV(x,y):
