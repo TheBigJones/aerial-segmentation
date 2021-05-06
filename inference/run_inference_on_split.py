@@ -15,6 +15,17 @@ def nullable_string(val):
         return None
     return val
 
+def str2bool(v):
+  """https://stackoverflow.com/questions/15008758/parsing-boolean-values-with-argparse"""
+  if isinstance(v, bool):
+      return v
+  if v.lower() in ('yes', 'true', 't', 'y', '1'):
+      return True
+  elif v.lower() in ('no', 'false', 'f', 'n', '0'):
+      return False
+  else:
+      raise argparse.ArgumentTypeError('Boolean value expected.')
+
 def get_output_dirname(run_id: str) -> Path:
   output_dirname = INFERENCE_BASE_DIR / f"{run_id}"
   output_dirname.mkdir(parents=True, exist_ok=True)
@@ -50,7 +61,7 @@ if __name__ == "__main__":
   parser.add_argument("--inference_type", type=nullable_string, default=None)
   parser.add_argument("--size", type=int, default=300)
   parser.add_argument("--stride", type=int, default=1)
-  parser.add_argument("--smoothing",type=bool, default=False)
+  parser.add_argument("--smoothing",type=str2bool, default=False)
   
   # save_model args
   parser.add_argument("--entity", type=str, default="team_jf")
@@ -59,8 +70,8 @@ if __name__ == "__main__":
   parser.add_argument("--metric", type=str, default="f1_mean")
   parser.add_argument("--mode", type=str, default="max")
   
-  args = parser.parse_args
-  
+  args = parser.parse_args()
+    
   # save the model from the given run_id to the artifacts folder
   save_model(args)
   
