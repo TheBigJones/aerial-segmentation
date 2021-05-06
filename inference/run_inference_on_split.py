@@ -10,6 +10,11 @@ from training.save_model import save_model
 FILE_NAME = Path(__file__).resolve()
 INFERENCE_BASE_DIR = FILE_NAME.parent
 
+def nullable_string(val):
+    if not val:
+        return None
+    return val
+
 def get_output_dirname(run_id: str) -> Path:
   output_dirname = INFERENCE_BASE_DIR / f"{run_id}"
   output_dirname.mkdir(parents=True, exist_ok=True)
@@ -42,10 +47,10 @@ if __name__ == "__main__":
   parser.add_argument("--dataset", type=str, default="dataset-sample")
   parser.add_argument("--split", type=str, default="val")
   parser.add_argument("--run_id", type=str, default="best_model")
-  parser.add_argument("--inference_type", type=str, default=None)
+  parser.add_argument("--inference_type", type=nullable_string, default=None)
   parser.add_argument("--size", type=int, default=300)
   parser.add_argument("--stride", type=int, default=1)
-  parser.add_argument("--smoothing", action="store_true", default=False)
+  parser.add_argument("--smoothing",type=bool, default=False)
   
   # save_model args
   parser.add_argument("--entity", type=str, default="team_jf")
@@ -54,7 +59,7 @@ if __name__ == "__main__":
   parser.add_argument("--metric", type=str, default="f1_mean")
   parser.add_argument("--mode", type=str, default="max")
   
-  args = parser.parse_args()
+  args = parser.parse_args
   
   # save the model from the given run_id to the artifacts folder
   save_model(args)
