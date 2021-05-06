@@ -2,7 +2,6 @@ command:
   - ${env}
   - ${interpreter}
   - ${program}
-  - "--wandb"
   - ${args}
 program: inference/run_inference_on_split.py
 method: bayes
@@ -12,8 +11,6 @@ metric:
   goal: maximize
   name: f1_mean
 parameters:
-  gpus:
-    value: 1
   dataset:
     value: dataset-medium
   split:
@@ -22,7 +19,7 @@ parameters:
     value: best_model
   inference_type:
     values: ["", "cascading"]
-  inference_size:
+  size:
     values: [160, 320, 640]
   stride:
     values: [1, 2, 3]
