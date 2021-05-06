@@ -117,7 +117,7 @@ def score_masks(labelfile, predictionfile):
 
     return precision, recall, f1, savefile
 
-def score_predictions(dataset, basedir='.'):
+def score_predictions(dataset, basedir='.', split=None):
 
     scores = []
 
@@ -127,9 +127,16 @@ def score_predictions(dataset, basedir='.'):
 
     predictions = []
     confusions = []
+    if split == "train":
+      split_ids = train_ids
+    elif split == "val":
+      split_ids = val_ids
+    elif split == "test":
+      split_ids = test_ids
+    else:
+      raise Exception(f"{split} is no valid split (train, val, test)")
 
-    #for scene in train_ids + val_ids + test_ids:
-    for scene in test_ids:
+    for scene in split_ids:
 
         labelfile = f'{dataset}/labels/{scene}-label.png'
         predsfile = os.path.join(basedir, f"{scene}-prediction.png")

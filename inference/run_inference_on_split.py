@@ -24,8 +24,12 @@ def run_inference_on_test(args: argparse.Namespace):
   split = args.split
   basedir = wandb.run.dir
   model = SegModel(run_id=training_run_id)
-  run_inference(dataset, model, basedir, stride, smoothing, inference_size, inference_type, split)
-  score, _ = score_predictions(dataset, basedir=basedir)
+  print("---- Run Inference ----")
+  run_inference(dataset, model=model, basedir=basedir, stride=stride,
+                smoothing=smoothing, inference_size=inference_size,
+                inference_type=inference_type, split=split)
+  print("---- Score Predictions ----")
+  score, _ = score_predictions(dataset, basedir=basedir, split=split)
   wandb.config.update(score)
   wandb.summary.update(score)
 
