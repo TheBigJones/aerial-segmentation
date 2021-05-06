@@ -106,8 +106,9 @@ def valid_pixels(image):
     return mask
 
 
-def run_cascading_inference_on_file(imagefile, predsfile, model, transform, size=300, batchsize=16, stride=1, smoothing = False, alpha = 1./3, max_doubling_state=None, to_one_hot=True):
+def run_cascading_inference_on_file(imagefile, predsfile, model, transform, size=300, batchsize=16, stride=1, smoothing = False, exponent = 2., alpha = 1./3, max_doubling_state=None, to_one_hot=True):
     num_classes = model.model.num_classes
+    assert exponent > 1
     if model.model.predict_elevation:
         num_classes -= 1
     with Image.open(imagefile) as img:
@@ -119,14 +120,14 @@ def run_cascading_inference_on_file(imagefile, predsfile, model, transform, size
         prediction_orig = torch.zeros((num_classes, original_shape[0], original_shape[1]))
 
         larger_dim = max(original_shape[0], original_shape[1])
-        num_doubling_states = int(math.ceil(np.log2(larger_dim / size)))
+        num_doubling_states = int(math.ceil(np.log(larger_dim / size)/np.log(exponent)))
 
         if max_doubling_state is not None:
             num_doubling_states = min(num_doubling_states, max_doubling_state)
 
         for d in range(num_doubling_states, -1, -1):
-            size_res_x = min(SDIV((larger_dim / 2**d), size)*size, original_shape[0])
-            size_res_y = min(SDIV((larger_dim / 2**d), size)*size, original_shape[1])
+            size_res_x = min(int(larger_dim / exponent**d), original_shape[0])
+            size_res_y = min(int(larger_dim / exponent**d), original_shape[1])
             print(f"Predicting on image with resolution {size_res_x} x {size_res_y}")
 
             img_res = np.array(img.convert('RGB').resize((size_res_y, size_res_x)))
