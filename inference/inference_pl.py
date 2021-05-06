@@ -46,12 +46,12 @@ def predict_on_chips(model, chips, size, shape, transform, batchsize = 16, smoot
     num_classes = model.model.num_classes
     if model.model.predict_elevation:
         num_classes -= 1
-    prediction = np.zeros((num_classes, shape[0], shape[1]))
+    prediction = torch.zeros((num_classes, shape[0], shape[1]))
     chips = [(chip, xi, yi) for chip, xi, yi in chips if chip.sum() > 0]
     # std chosen empirically
     if smoothing:
         smoothing_kernel = signal.gaussian(size, std=int(size/6)).reshape(size, 1)
-        smoothing_kernel = np.outer(smoothing_kernel, smoothing_kernel)
+        smoothing_kernel = torch.from_numpy(np.outer(smoothing_kernel, smoothing_kernel))
     num_batches = (len(chips) + batchsize -1) // batchsize
 
     chip_preds_list = []
@@ -66,7 +66,7 @@ def predict_on_chips(model, chips, size, shape, transform, batchsize = 16, smoot
             batch_preds = batch_preds.to("cpu")
             for (chip, x, y), pred in zip(batch_chips, batch_preds):
                 section = prediction[0, y:y+size, x:x+size].shape
-                prediction[:, y:y+size, x:x+size] = np.add(prediction[:, y:y+size, x:x+size], pred[:, :section[0], :section[1]]*smoothing_kernel[:section[0], :section[1]])
+                prediction[:, y:y+size, x:x+size] = prediction[:, y:y+size, x:x+size] + pred[:, :section[0], :section[1]]*smoothing_kernel[:section[0], :section[1]]
     else:
         for j in range(num_batches):
             # last batch can be smaller than batchsize
@@ -77,7 +77,7 @@ def predict_on_chips(model, chips, size, shape, transform, batchsize = 16, smoot
             batch_preds = batch_preds.to("cpu")
             for (chip, x, y), pred in zip(batch_chips, batch_preds):
                 section = prediction[0, y:y+size, x:x+size].shape
-                prediction[:, y:y+size, x:x+size] = np.add(prediction[:, y:y+size, x:x+size], pred[:, :section[0], :section[1]])
+                prediction[:, y:y+size, x:x+size] = prediction[:, y:y+size, x:x+size] + pred[:, :section[0], :section[1]]
 
 
     return prediction
@@ -91,7 +91,7 @@ def run_inference_on_file(imagefile, predsfile, model, transform, size=300, batc
 
     prediction = predict_on_chips(model, chips, size, shape, transform, batchsize = batchsize, smoothing = smoothing)
 
-    prediction = np.argmax(prediction, axis=-3)
+    prediction = np.argmax(prediction.numpy(), axis=-3)
     prediction[valid_pixel_mask] += 1
     invalid_pixel_mask = np.logical_not(valid_pixel_mask)
     prediction[invalid_pixel_mask] = 0
@@ -140,7 +140,7 @@ def run_cascading_inference_on_file(imagefile, predsfile, model, transform, size
 
             # Interpolate array to get back to original shape
             target_shape = (original_shape[0],original_shape[1])
-            prediction_orig = torch.squeeze(torch.nn.functional.interpolate(torch.unsqueeze(torch.from_numpy(prediction), dim=0),size = target_shape, mode="bilinear", align_corners=True), dim=0)
+            prediction_orig = torch.squeeze(torch.nn.functional.interpolate(torch.unsqueeze(prediction, dim=0),size = target_shape, mode="bilinear", align_corners=True), dim=0)
 
             # Use old prediction weighted with alpha to predict new probabilites. To be formally correct, current_prediction would have to be
             # divided by (1+alpha) for proper normalization but as we use argmax anyway, this does not matter
