@@ -35,31 +35,38 @@ def save_best_model():
         sort_reverse = True
 
     api = wandb.Api()
-    runs = api.runs(f"{args.entity}/{args.project}")  # , filters={"config.data_class": args.trained_data_class})
-    sorted_runs = sorted(
-        runs,
-        key=lambda run: _get_summary_value(wandb_run=run, key=args.metric, default=default_metric_value),
-        reverse=sort_reverse,
-    )
+    if args.run_id == "":
+      runs = api.runs(f"{args.entity}/{args.project}")  # , filters={"config.data_class": args.trained_data_class})
+      sorted_runs = sorted(
+          runs,
+          key=lambda run: _get_summary_value(wandb_run=run, key=args.metric, default=default_metric_value),
+          reverse=sort_reverse,
+      )
 
-    best_run = sorted_runs[0]
-    summary = best_run.summary
-    print(f"Best run ({best_run.name}, {best_run.id}) picked from {len(runs)} runs with the following metrics:")
-    print(f" - val_loss: {summary['val_loss']}, val_acc: {summary['val_acc']}")
-
-    artifacts_dirname = _get_artifacts_dirname(args.trained_data_class)
+      run = sorted_runs[0]
+      summary = run.summary
+      print(f"Best run ({run.name}, {run.id}) picked from {len(runs)} runs with the following metrics:")
+      print(f" - val_loss: {summary['val_loss']}, val_acc: {summary['val_acc']}, val_f1: {summary['val_f1']}")
+    else:
+      run = api.run(f"{args.entity}/{args.project}/{args.run_id}")
+      summary = run.summary
+      print(f"Run ({run.name}, {run.id}) with the following metrics:")
+      print(f" - val_loss: {summary['val_loss']}, val_acc: {summary['val_acc']}, val_f1: {summary['val_f1']}")
+    artifacts_dirname = _get_artifacts_dirname(args.trained_data_class, args.run_id)
     with open(artifacts_dirname / "config.json", "w") as file:
-        json.dump(best_run.config, file, indent=4)
+        json.dump(run.config, file, indent=4)
     with open(artifacts_dirname / "run_command.txt", "w") as file:
-        file.write(_get_run_command(best_run))
-    _save_model_weights(wandb_run=best_run, project=args.project, output_dirname=artifacts_dirname)
+        file.write(_get_run_command(run))
+    _save_model_weights(wandb_run=run, project=args.project, output_dirname=artifacts_dirname)
 
 
-def _get_artifacts_dirname(trained_data_class: str) -> Path:
+def _get_artifacts_dirname(trained_data_class: str, run_id: str) -> Path:
     """Return artifacts dirname."""
+    if run_id == "":
+      run_id = "best_model"
     for keyword in ["aerialdata"]:
       if keyword in trained_data_class.lower():
-          artifacts_dirname = ARTIFACTS_BASE_DIRNAME / f"{keyword}_segnet"
+          artifacts_dirname = ARTIFACTS_BASE_DIRNAME / f"{keyword}_{run_id}"
           artifacts_dirname.mkdir(parents=True, exist_ok=True)
           break
     return artifacts_dirname
@@ -125,6 +132,8 @@ def _setup_parser() -> argparse.ArgumentParser:
     parser.add_argument("--trained_data_class", type=str, default="AerialData")
     parser.add_argument("--metric", type=str, default="f1_mean")
     parser.add_argument("--mode", type=str, default="max")
+
+    parser.add_argument("--run_id", type=str, default="")
     return parser
 
 
