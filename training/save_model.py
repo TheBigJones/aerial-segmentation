@@ -22,11 +22,8 @@ ARTIFACTS_BASE_DIRNAME = FILE_NAME.parents[1] / "artifacts"
 TRAINING_LOGS_DIRNAME = FILE_NAME.parent / "logs"
 
 
-def save_best_model():
+def save_model(args):
     """Find and save the best model trained on a given dataset to artifacts directory."""
-    parser = _setup_parser()
-    args = parser.parse_args()
-
     if args.mode == "min":
         default_metric_value = sys.maxsize
         sort_reverse = False
@@ -138,4 +135,6 @@ def _setup_parser() -> argparse.ArgumentParser:
 
 
 if __name__ == "__main__":
-    save_best_model()
+    parser = _setup_parser()
+    args = parser.parse_args()
+    save_model(args)

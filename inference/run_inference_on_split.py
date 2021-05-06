@@ -5,6 +5,7 @@ import wandb
 from inference.AerialSegmentation import SegModel
 from inference.inference_pl import run_inference
 from inference.scoring import score_predictions
+from training.save_model import save_model
 
 FILE_NAME = Path(__file__).resolve()
 INFERENCE_BASE_DIR = FILE_NAME.parent
@@ -34,8 +35,10 @@ def run_inference_on_test(args: argparse.Namespace):
   wandb.summary.update(score)
 
 if __name__ == "__main__":
-
+  # setup parser
   parser = argparse.ArgumentParser(description="Run inference on test set")
+  
+  # inference args
   parser.add_argument("--dataset", type=str, default="dataset-sample")
   parser.add_argument("--split", type=str, default="val")
   parser.add_argument("--run_id", type=str, default="best_model")
@@ -43,8 +46,20 @@ if __name__ == "__main__":
   parser.add_argument("--size", type=int, default=300)
   parser.add_argument("--stride", type=int, default=1)
   parser.add_argument("--smoothing", action="store_true", default=False)
-
+  
+  # save_model args
+  parser.add_argument("--entity", type=str, default="team_jf")
+  parser.add_argument("--project", type=str, default="aerialsegmenation")
+  parser.add_argument("--trained_data_class", type=str, default="AerialData")
+  parser.add_argument("--metric", type=str, default="f1_mean")
+  parser.add_argument("--mode", type=str, default="max")
+  
   args = parser.parse_args()
+  
+  # save the model from the given run_id to the artifacts folder
+  save_model(args)
+  
+  # init wandb run and update summary 
   config_update = vars(args)
   config_update["training_run_id"] = config_update.pop("run_id")
   wandb.init(project="aerialsegmentation-inference", entity="team_jf", dir=INFERENCE_BASE_DIR)
