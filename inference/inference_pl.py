@@ -96,6 +96,7 @@ def run_inference_on_file(imagefile, predsfile, model, transform, size=300, batc
     invalid_pixel_mask = np.logical_not(valid_pixel_mask)
     prediction[invalid_pixel_mask] = 0
     mask = category2mask(prediction)
+    print("saving Image")
     Image.fromarray(mask).save(predsfile)
 
 def SDIV(x,y):
@@ -162,7 +163,7 @@ def run_cascading_inference_on_file(imagefile, predsfile, model, transform, size
         mask = category2mask(current_prediction)
         Image.fromarray(mask).resize((original_shape[1], original_shape[0]), resample=Image.NEAREST).save(predsfile)
 
-def run_inference(dataset, model=None, basedir='predictions', stride=1, smoothing=False, size=300):
+def run_inference(dataset, model=None, basedir='predictions', stride=1, smoothing=False, size=300, inference_type=None):
     if not os.path.isdir(basedir):
         os.mkdir(basedir)
     if model is None:
@@ -182,4 +183,7 @@ def run_inference(dataset, model=None, basedir='predictions', stride=1, smoothin
 
         print(f'running inference on image {imagefile}.')
         print(f'saving prediction to {predsfile}.')
-        run_cascading_inference_on_file(imagefile, predsfile, model, transform, stride=stride, smoothing=smoothing, size=size)
+        if inference_type is None:
+          run_inference_on_file(imagefile, predsfile, model, transform, stride=stride, smoothing=smoothing, size=size)
+        else:
+          run_cascading_inference_on_file(imagefile, predsfile, model, transform, stride=stride, smoothing=smoothing, size=size)

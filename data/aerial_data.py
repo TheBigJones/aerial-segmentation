@@ -31,7 +31,7 @@ class AerialData(BaseDataModule):
     Learn more at https://pytorch-lightning.readthedocs.io/en/stable/extensions/datamodules.html
     """
 
-    def __init__(self, args: argparse.Namespace) -> None:
+    def __init__(self, args: argparse.Namespace=None) -> None:
         super().__init__(args)
 
         self.dims = (3, self.image_size, self.image_size)  # dims are returned when calling `.size()` on this object.
