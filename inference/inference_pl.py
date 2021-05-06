@@ -106,8 +106,9 @@ def valid_pixels(image):
     return mask
 
 
-def run_cascading_inference_on_file(imagefile, predsfile, model, transform, size=300, batchsize=16, stride=1, smoothing = False, alpha = 1./3, max_doubling_state=None, to_one_hot=True):
+def run_cascading_inference_on_file(imagefile, predsfile, model, transform, size=300, batchsize=16, stride=1, smoothing = False, exponent = 2., alpha = 1./3, max_doubling_state=None, to_one_hot=True):
     num_classes = model.model.num_classes
+    assert exponent > 1
     if model.model.predict_elevation:
         num_classes -= 1
     with Image.open(imagefile) as img:
@@ -115,18 +116,18 @@ def run_cascading_inference_on_file(imagefile, predsfile, model, transform, size
         valid_pixel_mask = valid_pixels(img)
 
         original_shape = np.array(img.convert('RGB')).shape
-        current_prediction = np.zeros((num_classes, original_shape[0], original_shape[1]))
-        prediction_orig = np.zeros((num_classes, original_shape[0], original_shape[1]))
+        current_prediction = torch.zeros((num_classes, original_shape[0], original_shape[1]))
+        prediction_orig = torch.zeros((num_classes, original_shape[0], original_shape[1]))
 
         larger_dim = max(original_shape[0], original_shape[1])
-        num_doubling_states = int(math.ceil(np.log2(larger_dim / size)))
+        num_doubling_states = int(math.ceil(np.log(larger_dim / size)/np.log(exponent)))
 
         if max_doubling_state is not None:
             num_doubling_states = min(num_doubling_states, max_doubling_state)
 
         for d in range(num_doubling_states, -1, -1):
-            size_res_x = min(SDIV((larger_dim / 2**d), size)*size, original_shape[0])
-            size_res_y = min(SDIV((larger_dim / 2**d), size)*size, original_shape[1])
+            size_res_x = min(int(larger_dim / exponent**d), original_shape[0])
+            size_res_y = min(int(larger_dim / exponent**d), original_shape[1])
             print(f"Predicting on image with resolution {size_res_x} x {size_res_y}")
 
             img_res = np.array(img.convert('RGB').resize((size_res_y, size_res_x)))
@@ -137,25 +138,23 @@ def run_cascading_inference_on_file(imagefile, predsfile, model, transform, size
 
             prediction = predict_on_chips(model, chips, size, shape, transform, batchsize = batchsize, smoothing = smoothing)
 
-            # Factors to zoom to original shape. Mind that the original image is of shape (W, H, C), while the prediction is (num_classes, W, H)
-            zoom_factors = [1, float(original_shape[0])/prediction.shape[1], float(original_shape[1])/prediction.shape[2]]
-
             # Interpolate array to get back to original shape
-            interpolation.zoom(prediction,zoom_factors, output=prediction_orig, order=1)
+            target_shape = (original_shape[0],original_shape[1])
+            prediction_orig = torch.squeeze(torch.nn.functional.interpolate(torch.unsqueeze(torch.from_numpy(prediction), dim=0),size = target_shape, mode="bilinear", align_corners=True), dim=0)
 
             # Use old prediction weighted with alpha to predict new probabilites. To be formally correct, current_prediction would have to be
             # divided by (1+alpha) for proper normalization but as we use argmax anyway, this does not matter
             current_prediction = alpha * current_prediction + prediction_orig
 
             if to_one_hot:
-                prediction_classes = np.argmax(current_prediction, axis=-3)
+                prediction_classes = torch.argmax(current_prediction, dim=-3, keepdim=False)
                 # Cast to tensor to use PyTorch one_hot-function, cast back to numpy and transpose, because one-hot expands at the back of the array
-                current_prediction = torch.nn.functional.one_hot(torch.from_numpy(prediction_classes), num_classes=num_classes).numpy().transpose(2,0,1)
+                current_prediction = torch.nn.functional.one_hot(prediction_classes, num_classes=num_classes).permute(2,0,1)
             else:
                 current_prediction = current_prediction/(1. + alpha)
 
 
-        current_prediction = np.argmax(current_prediction, axis=-3)
+        current_prediction = np.argmax(current_prediction.numpy(), axis=-3)
         current_prediction[valid_pixel_mask] += 1
         invalid_pixel_mask = np.logical_not(valid_pixel_mask)
         current_prediction[invalid_pixel_mask] = 0
