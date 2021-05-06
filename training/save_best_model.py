@@ -62,7 +62,7 @@ def save_best_model():
 
 def _get_artifacts_dirname(trained_data_class: str, run_id: str) -> Path:
     """Return artifacts dirname."""
-    if run_id == "":
+    if run_id == None:
       run_id = "best_model"
     for keyword in ["aerialdata"]:
       if keyword in trained_data_class.lower():
