@@ -3,7 +3,7 @@ from pathlib import Path
 import wandb
 
 from inference.AerialSegmentation import SegModel
-from inference.inference_pl import run_inference, run_cascading_inference_on_file
+from inference.inference_pl import run_inference
 from inference.scoring import score_predictions
 
 FILE_NAME = Path(__file__).resolve()
@@ -18,17 +18,17 @@ def run_inference_on_test(args: argparse.Namespace):
   training_run_id = args.training_run_id
   dataset = args.dataset
   inference_type = args.inference_type
-  inference_size = args.inference_size
+  size = args.size
   stride = args.stride
   smoothing = args.smoothing
   split = args.split
   basedir = wandb.run.dir
   model = SegModel(run_id=training_run_id)
-  print("---- Run Inference ----")
+  print("---- Running Inference ----")
   run_inference(dataset, model=model, basedir=basedir, stride=stride,
-                smoothing=smoothing, inference_size=inference_size,
+                smoothing=smoothing, size=size,
                 inference_type=inference_type, split=split)
-  print("---- Score Predictions ----")
+  print("---- Scoring Predictions ----")
   score, _ = score_predictions(dataset, basedir=basedir, split=split)
   wandb.config.update(score)
   wandb.summary.update(score)
@@ -40,7 +40,7 @@ if __name__ == "__main__":
   parser.add_argument("--split", type=str, default="val")
   parser.add_argument("--run_id", type=str, default="best_model")
   parser.add_argument("--inference_type", type=str, default=None)
-  parser.add_argument("--inference_size", type=int, default=300)
+  parser.add_argument("--size", type=int, default=300)
   parser.add_argument("--stride", type=int, default=1)
   parser.add_argument("--smoothing", action="store_true", default=False)
 
