@@ -32,7 +32,7 @@ def save_model(args):
         sort_reverse = True
 
     api = wandb.Api()
-    if args.run_id is None:
+    if args.run_id == "best_model":
       runs = api.runs(f"{args.entity}/{args.project}")  # , filters={"config.data_class": args.trained_data_class})
       sorted_runs = sorted(
           runs,
@@ -130,7 +130,7 @@ def _setup_parser() -> argparse.ArgumentParser:
     parser.add_argument("--metric", type=str, default="f1_mean")
     parser.add_argument("--mode", type=str, default="max")
 
-    parser.add_argument("--run_id", type=str, default=None)
+    parser.add_argument("--run_id", type=str, default="best_model")
     return parser
 
 
