@@ -11,6 +11,8 @@ metric:
   goal: maximize
   name: f1_mean
 parameters:
+  metric:
+    value: val_f1
   dataset:
     value: dataset-medium
   split:
