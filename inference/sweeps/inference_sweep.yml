@@ -14,7 +14,7 @@ parameters:
   metric:
     value: val_f1
   project:
-    value: aerialsegmentation-sweeps
+    value: aerialsegmenation-sweeps
   dataset:
     value: dataset-medium
   split:
