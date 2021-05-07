@@ -82,7 +82,7 @@ def predict_on_chips(model, chips, size, shape, transform, batchsize = 16, smoot
 
     return prediction
 
-def run_inference_on_file(imagefile, predsfile, model, transform, size=300, batchsize=16, stride=1, smoothing = False):
+def run_inference_on_file(imagefile, predsfile, model, transform, size=300, batchsize=16, stride=1, smoothing = False, proper_masking = False):
     with Image.open(imagefile).convert('RGB') as img:
         valid_pixel_mask = valid_pixels(img)
         nimg = np.array(Image.open(imagefile).convert('RGB'))
@@ -91,10 +91,13 @@ def run_inference_on_file(imagefile, predsfile, model, transform, size=300, batc
 
     prediction = predict_on_chips(model, chips, size, shape, transform, batchsize = batchsize, smoothing = smoothing)
 
-    prediction = np.argmax(prediction.numpy(), axis=-3)
-    prediction[valid_pixel_mask] += 1
-    invalid_pixel_mask = np.logical_not(valid_pixel_mask)
-    prediction[invalid_pixel_mask] = 0
+    if proper_masking:
+        prediction = np.argmax(prediction.numpy(), axis=-3)
+        prediction[valid_pixel_mask] += 1
+        invalid_pixel_mask = np.logical_not(valid_pixel_mask)
+        prediction[invalid_pixel_mask] = 0
+    else:
+        prediction = np.argmax(prediction.numpy(), axis=-3) + 1
     mask = category2mask(prediction)
     Image.fromarray(mask).save(predsfile)
 
@@ -106,7 +109,7 @@ def valid_pixels(image):
     return mask
 
 
-def run_cascading_inference_on_file(imagefile, predsfile, model, transform, size=300, batchsize=16, stride=1, smoothing = False, exponent = 2., alpha = 1./3, max_doubling_state=None, to_one_hot=True):
+def run_cascading_inference_on_file(imagefile, predsfile, model, transform, size=300, batchsize=16, stride=1, smoothing = False, exponent = 2., alpha = 1./3, max_doubling_state=None, to_one_hot=True, proper_masking = False):
     num_classes = model.model.num_classes
     assert exponent > 1
     if model.model.predict_elevation:
@@ -153,13 +156,16 @@ def run_cascading_inference_on_file(imagefile, predsfile, model, transform, size
             else:
                 current_prediction = current_prediction/(1. + alpha)
 
-
+    if proper_masking:
         current_prediction = np.argmax(current_prediction.numpy(), axis=-3)
         current_prediction[valid_pixel_mask] += 1
         invalid_pixel_mask = np.logical_not(valid_pixel_mask)
         current_prediction[invalid_pixel_mask] = 0
-        mask = category2mask(current_prediction)
-        Image.fromarray(mask).resize((original_shape[1], original_shape[0]), resample=Image.NEAREST).save(predsfile)
+    else:
+        current_prediction = np.argmax(current_prediction.numpy(), axis=-3) + 1
+
+    mask = category2mask(current_prediction)
+    Image.fromarray(mask).resize((original_shape[1], original_shape[0]), resample=Image.NEAREST).save(predsfile)
 
 def run_inference(dataset, model=None, basedir='predictions', stride=1, smoothing=False, size=300, inference_type=None, split=None):
     if not os.path.isdir(basedir):
