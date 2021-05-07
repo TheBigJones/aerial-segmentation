@@ -5,7 +5,7 @@ command:
   - ${args}
 program: inference/run_inference_on_split.py
 method: bayes
-project: aerialsegmenation-sweeps
+project: aerialsegmenation-inference-sweeps
 entity: team_jf
 metric:
   goal: maximize
@@ -26,6 +26,6 @@ parameters:
   size:
     values: [160, 320, 640]
   stride:
-    values: [1, 2, 3]
+    values: [1, 2, 3, 4, 5]
   smoothing:
     values: [0, 1]
