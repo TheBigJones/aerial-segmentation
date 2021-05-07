@@ -127,14 +127,15 @@ def score_predictions(dataset, basedir='.', split=None):
 
     predictions = []
     confusions = []
-    if split == "train":
-      split_ids = train_ids
-    elif split == "val":
-      split_ids = val_ids
-    elif split == "test":
-      split_ids = test_ids
-    else:
-      raise Exception(f"{split} is no valid split (train, val, test)")
+    split_ids = []
+    if "train" in split:
+      split_ids += train_ids
+    if "val" in split:
+      split_ids += val_ids
+    if "test" in split:
+      split_ids += test_ids
+    if len(split_ids):
+      raise Exception(f"{split} does not name any proper splits (train, val, test)")
 
     for scene in split_ids:
 

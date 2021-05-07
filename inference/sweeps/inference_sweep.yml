@@ -3,6 +3,9 @@ command:
   - ${interpreter}
   - ${program}
   - ${args}
+  - "--split"
+  - "train"
+  - "val"
 program: inference/run_inference_on_split.py
 method: bayes
 project: aerialsegmenation-inference-sweeps

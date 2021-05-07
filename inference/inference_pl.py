@@ -176,14 +176,15 @@ def run_inference(dataset, model=None, basedir='predictions', stride=1, smoothin
     transforms_list = [transforms.ToTensor(), transforms.Normalize(mean=[0.485, 0.456, 0.406],std=[0.229, 0.224, 0.225])]
     transform = transforms.Compose(transforms_list)
 
-    if split == "train":
-      split_ids = train_ids
-    elif split == "val":
-      split_ids = val_ids
-    elif split == "test":
-      split_ids = test_ids
-    else:
-      raise Exception(f"{split} is no valid split (train, val, test)")
+    split_ids = []
+    if "train" in split:
+      split_ids += train_ids
+    if "val" in split:
+      split_ids += val_ids
+    if "test" in split:
+      split_ids += test_ids
+    if len(split_ids) == 0:
+      raise Exception(f"{split} does not name any proper splits (train, val, test)")
 
     print(f"Running inference on {split}_split of {dataset}")
 
