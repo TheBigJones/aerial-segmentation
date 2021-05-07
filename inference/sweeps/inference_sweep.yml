@@ -20,8 +20,6 @@ parameters:
     value: aerialsegmenation-sweeps
   dataset:
     value: dataset-medium
-  split:
-    value: val
   run_id:
     value: best_model
   inference_type:
