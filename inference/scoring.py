@@ -134,7 +134,7 @@ def score_predictions(dataset, basedir='.', split=None):
       split_ids += val_ids
     if "test" in split:
       split_ids += test_ids
-    if len(split_ids):
+    if len(split_ids) == 0:
       raise Exception(f"{split} does not name any proper splits (train, val, test)")
 
     for scene in split_ids:
