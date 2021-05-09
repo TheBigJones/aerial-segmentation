@@ -66,6 +66,4 @@ for i, (elev, mask) in enumerate(zip(elev_files, mask_files)):
         histos[label][i] = np.histogram(elevation[masking], bins=bins)[0]
 
 for label in LABELS:
-    np.savetxt(f"elev_dist_{dataset}_{label}.dat", np.column_stack((bins[:-1]+(bins[1]-bins[0])/2, np.mean(histos[label], axis=0))), header="#maximum = {maximum[label]}\n#minimum = {minimum[label]}", comments="")
-
-
+    np.savetxt(f"elev_dist_{dataset}_{label}.dat", np.column_stack((bins[:-1]+(bins[1]-bins[0])/2, np.mean(histos[label], axis=0))), header=f"#maximum = {maximum[label]}\n#minimum = {minimum[label]}", comments="")
