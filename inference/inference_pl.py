@@ -144,11 +144,11 @@ def run_cascading_inference_on_file(imagefile, predsfile, model, transform, size
             chips = chips_from_image(img_res, size=size, stride=stride)
 
             prediction = predict_on_chips(model, chips, size, shape, transform, batchsize = batchsize, smoothing = smoothing)
-            prediction = normalize_prediction(prediction)
 
             # Interpolate array to get back to original shape
             target_shape = (original_shape[0],original_shape[1])
             prediction_orig = torch.squeeze(torch.nn.functional.interpolate(torch.unsqueeze(prediction, dim=0),size = target_shape, mode="bilinear", align_corners=True), dim=0)
+            prediction_orig = normalize_prediction(prediction_orig)
 
             # Use old prediction weighted with alpha to predict new probabilites. To be formally correct, current_prediction would have to be
             # divided by (1+alpha) for proper normalization but as we use argmax anyway, this does not matter
