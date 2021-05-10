@@ -109,7 +109,7 @@ def valid_pixels(image):
     return mask
 
 
-def run_cascading_inference_on_file(imagefile, predsfile, model, transform, size=300, batchsize=16, stride=1, smoothing = False, exponent = 2., alpha = 1./3, max_doubling_state=None, to_one_hot=True, proper_masking = False):
+def run_cascading_inference_on_file(imagefile, predsfile, model, transform, size=300, batchsize=16, stride=1, smoothing = False, exponent = 2., alpha = 1./3, max_doubling_state=None, to_one_hot=True, proper_masking = False, highest_res_stage=0):
     num_classes = model.model.num_classes
     assert exponent > 1
     if model.model.predict_elevation:
@@ -128,7 +128,7 @@ def run_cascading_inference_on_file(imagefile, predsfile, model, transform, size
         if max_doubling_state is not None:
             num_doubling_states = min(num_doubling_states, max_doubling_state)
 
-        for d in range(num_doubling_states, -1, -1):
+        for d in range(num_doubling_states, highest_res_stage-1, -1):
             size_res_x = min(int(larger_dim / exponent**d), original_shape[0])
             size_res_y = min(int(larger_dim / exponent**d), original_shape[1])
             print(f"Predicting on image with resolution {size_res_x} x {size_res_y}")
@@ -167,7 +167,7 @@ def run_cascading_inference_on_file(imagefile, predsfile, model, transform, size
     mask = category2mask(current_prediction)
     Image.fromarray(mask).resize((original_shape[1], original_shape[0]), resample=Image.NEAREST).save(predsfile)
 
-def run_inference(dataset, model=None, basedir='predictions', stride=1, smoothing=False, size=300, inference_type=None, split=None, batchsize=16):
+def run_inference(dataset, model=None, basedir='predictions', stride=1, smoothing=False, size=300, inference_type=None, split=None, batchsize=16, highest_res_stage=0):
     if not os.path.isdir(basedir):
         os.mkdir(basedir)
     if model is None:
@@ -200,6 +200,6 @@ def run_inference(dataset, model=None, basedir='predictions', stride=1, smoothin
         if inference_type is None:
           run_inference_on_file(imagefile, predsfile, model, transform, stride=stride, smoothing=smoothing, size=size, batchsize=batchsize)
         elif inference_type == "cascading":
-          run_cascading_inference_on_file(imagefile, predsfile, model, transform, stride=stride, smoothing=smoothing, size=size, batchsize=batchsize)
+          run_cascading_inference_on_file(imagefile, predsfile, model, transform, stride=stride, smoothing=smoothing, size=size, batchsize=batchsize, highest_res_stage=highest_res_stage)
         else:
           raise Exception(f"The inference_type \"{inference_type}\" is unknown")

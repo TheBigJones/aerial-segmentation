@@ -40,12 +40,13 @@ def run_inference_on_test(args: argparse.Namespace):
   smoothing = args.smoothing
   split = args.split
   batchsize = args.batchsize
+  highest_res_stage = args.highest_res_stage
   basedir = wandb.run.dir
   model = SegModel(run_id=training_run_id)
   print("---- Running Inference ----")
   run_inference(dataset, model=model, basedir=basedir, stride=stride,
                 smoothing=smoothing, size=size,
-                inference_type=inference_type, split=split, batchsize=batchsize)
+                inference_type=inference_type, split=split, batchsize=batchsize,highest_res_stage=highest_res_stage)
   print("---- Scoring Predictions ----")
   score, _ = score_predictions(dataset, basedir=basedir, split=split)
   wandb.config.update(score)
@@ -63,6 +64,7 @@ if __name__ == "__main__":
   parser.add_argument("--size", type=int, default=300)
   parser.add_argument("--stride", type=int, default=1)
   parser.add_argument("--batchsize", type=int, default=16)
+  parser.add_argument("--highest_res_stage", type=int, default=0)
   parser.add_argument("--smoothing",type=str2bool, default=False)
 
   # save_model args
