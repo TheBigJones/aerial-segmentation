@@ -108,6 +108,10 @@ def valid_pixels(image):
     mask = np.sum(np.array(image.convert('RGB')), axis = -1) > 0.0
     return mask
 
+def normalize_prediction(prediction):
+    normalization = torch.sum(prediction, dim=0)
+    prediction = prediction / normalization
+    return prediction
 
 def run_cascading_inference_on_file(imagefile, predsfile, model, transform, size=300, batchsize=16, stride=1, smoothing = False, exponent = 2., alpha = 1./3, max_doubling_state=None, to_one_hot=True, proper_masking = False, highest_res_stage=0):
     num_classes = model.model.num_classes
@@ -140,6 +144,7 @@ def run_cascading_inference_on_file(imagefile, predsfile, model, transform, size
             chips = chips_from_image(img_res, size=size, stride=stride)
 
             prediction = predict_on_chips(model, chips, size, shape, transform, batchsize = batchsize, smoothing = smoothing)
+            prediction = normalize_prediction(prediction)
 
             # Interpolate array to get back to original shape
             target_shape = (original_shape[0],original_shape[1])
