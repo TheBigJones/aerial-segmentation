@@ -10,6 +10,7 @@ import wandb
 import lit_models
 
 from inference import run_inference, SegModel, score_predictions
+from inference.run_inference_on_split import nullable_string, str2bool
 
 # In order to ensure reproducible experiments, we must set random seeds.
 np.random.seed(42)
