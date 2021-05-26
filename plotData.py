@@ -1,3 +1,4 @@
+"""Script used to create plots for report"""
 import matplotlib.pyplot as plt
 import numpy as np
 from data.config import LABELS, LABELMAP

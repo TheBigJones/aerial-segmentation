@@ -1,4 +1,0 @@
-# Example for configuration to be read when adding "read_config"-flag
-# Comments with "#", entries one line at the time as "arg=val"
-# Currently supports args = {num_workers} 
-num_workers=4

@@ -86,14 +86,6 @@ def main():
 
     if args.loss not in ("ctc", "transformer"):
         lit_model_class = lit_models.BaseLitModel
-    # Hide lines below until Lab 3
-    if args.loss == "ctc":
-        lit_model_class = lit_models.CTCLitModel
-    # Hide lines above until Lab 3
-    # Hide lines below until Lab 4
-    if args.loss == "transformer":
-        lit_model_class = lit_models.TransformerLitModel
-    # Hide lines above until Lab 4
     if args.model_class == "Unet":
         lit_model_class = lit_models.UnetLitModel
 
@@ -104,12 +96,10 @@ def main():
         lit_model = lit_model_class(args=args, model=model)
 
     logger = pl.loggers.TensorBoardLogger("training/logs")
-    # Hide lines below until Lab 5
     if args.wandb:
         logger = pl.loggers.WandbLogger(project='aerialsegmenation', entity='team_jf', settings=wandb.Settings(symlink=False))
         logger.watch(model)
         logger.log_hyperparams(vars(args))
-    # Hide lines above until Lab 5
 
     early_stopping_callback = pl.callbacks.EarlyStopping(
         monitor="val_loss", mode="min", patience=patience)
@@ -128,15 +118,12 @@ def main():
 
     trainer.fit(lit_model, datamodule=data)
     # pylint: enable=no-member
-
-    # Hide lines below until Lab 5
     best_model_path = model_checkpoint_callback.best_model_path
     if best_model_path:
         print("Best model saved at:", best_model_path)
         if args.wandb:
             wandb.save(best_model_path)
             print("Best model also uploaded to W&B")
-    # Hide lines above until Lab 5
     if enable_test and args.wandb:
       model = SegModel(checkpoint_path=best_model_path, model=model, args=args)
       dataset = vars(args).get("dataset", None)

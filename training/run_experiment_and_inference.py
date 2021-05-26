@@ -1,4 +1,4 @@
-"""Experiment-running framework."""
+"""Script for the final submission. Retrain best model and run inference on test data"""
 import argparse
 import importlib
 
@@ -93,14 +93,7 @@ def main():
 
     if args.loss not in ("ctc", "transformer"):
         lit_model_class = lit_models.BaseLitModel
-    # Hide lines below until Lab 3
-    if args.loss == "ctc":
-        lit_model_class = lit_models.CTCLitModel
-    # Hide lines above until Lab 3
-    # Hide lines below until Lab 4
-    if args.loss == "transformer":
-        lit_model_class = lit_models.TransformerLitModel
-    # Hide lines above until Lab 4
+
     if args.model_class == "Unet":
         lit_model_class = lit_models.UnetLitModel
 
@@ -111,12 +104,12 @@ def main():
         lit_model = lit_model_class(args=args, model=model)
 
     logger = pl.loggers.TensorBoardLogger("training/logs")
-    # Hide lines below until Lab 5
+
     if args.wandb:
         logger = pl.loggers.WandbLogger(project='aerialsegmenation-submission', entity='team_jf', settings=wandb.Settings(symlink=False))
         logger.watch(model)
         logger.log_hyperparams(vars(args))
-    # Hide lines above until Lab 5
+
 
     early_stopping_callback = pl.callbacks.EarlyStopping(
         monitor="val_loss", mode="min", patience=patience)
@@ -129,21 +122,17 @@ def main():
     trainer = pl.Trainer.from_argparse_args(
         args, callbacks=callbacks, logger=logger, weights_save_path="training/logs")
 
-    # pylint: disable=no-member
     # If passing --auto_lr_find, this will set learning rate
     trainer.tune(lit_model, datamodule=data)
 
     trainer.fit(lit_model, datamodule=data)
     # pylint: enable=no-member
-
-    # Hide lines below until Lab 5
     best_model_path = model_checkpoint_callback.best_model_path
     if best_model_path:
         print("Best model saved at:", best_model_path)
         if args.wandb:
             wandb.save(best_model_path)
             print("Best model also uploaded to W&B")
-    # Hide lines above until Lab 5
     model = SegModel(checkpoint_path=best_model_path, model=model, args=args)
 
     dataset = args.dataset
