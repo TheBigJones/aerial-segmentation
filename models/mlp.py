@@ -11,8 +11,6 @@ FC2_DIM = 128
 
 
 class MLP(nn.Module):
-    """Simple MLP suitable for recognizing single characters."""
-
     def __init__(
         self,
         data_config: Dict[str, Any],

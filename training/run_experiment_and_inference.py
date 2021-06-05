@@ -37,9 +37,7 @@ def _setup_parser():
     parser = argparse.ArgumentParser(add_help=False, parents=[trainer_parser])
 
     # Basic arguments
-    # Hide lines below until Lab 5
     parser.add_argument("--wandb", action="store_true", default=False)
-    # Hide lines above until Lab 5
     parser.add_argument("--data_class", type=str, default="AerialData")
     parser.add_argument("--model_class", type=str, default="MLP")
     parser.add_argument("--load_checkpoint", type=str, default=None)
