@@ -1,4 +1,9 @@
 # FSDL Project: AerialSegmentation
+<p float="center">
+  <img src="presentation/images/2ef3a4994a_0CCD105428INSPIRE-ortho.png" width="45%" />
+  &nbsp; &nbsp; &nbsp; &nbsp;
+  <img src="presentation/images/2ef3a4994a_0CCD105428INSPIRE-label.png" width="45%" /> 
+</p>
 
 This is the GIT repository to our Full Stack Deep Learning Final Project. In the Project we worked on the benchmark given at https://wandb.ai/dronedeploy/dronedeploy-aerial-segmentation/benchmark. For a deeper dive into our project please read the [report](FSDL_Report.pdf).
 
