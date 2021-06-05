@@ -39,8 +39,13 @@ With the run_id, project and metric flag one can determine the model used for in
 
 
 ## Submission
-For our final submission we used the run_experiment_and_inference.py script. Check out our submitted run by clicking the following link.
+For our final submission we used the run_experiment_and_inference.py script.
+If you would like to replicate our submission run the script with the following arguments.
+```
+training/run_experiment_and_inference.py --wandb --batch_size=8 --data_class=AerialData --dataset=dataset-medium --elevation_alpha=10 --encoder_name=mobilenet_v2 --gpus=1 --loss=cross_entropy --lr=0.0001 --model_class=Unet --augmentations hflip vflip rotate --read_config --inference_size=4000 --smoothing=1 --inference_stride=7 --inference_split test --inference_batchsize=1
+```
 
+Check out our submitted run by clicking the following link.<br/>
 https://wandb.ai/team_jf/aerialsegmenation-submission/runs/1mygfkxh/overview?workspace=user-
 
 ## License
