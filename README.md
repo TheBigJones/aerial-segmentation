@@ -5,11 +5,12 @@
   <img src="presentation/images/2ef3a4994a_0CCD105428INSPIRE-label.png" width="45%" /> 
 </p>
 
-This is the GIT repository to our Full Stack Deep Learning Final Project. In the Project we worked on the benchmark given at https://wandb.ai/dronedeploy/dronedeploy-aerial-segmentation/benchmark. For a deeper dive into our project please read the [report](FSDL_Report.pdf).
+This is the GIT repository to our Full Stack Deep Learning Final Project. In the Project we worked on the benchmark given at https://wandb.ai/dronedeploy/dronedeploy-aerial-segmentation/benchmark. 
+
+In the report to our project we give an overview of the task we worked on, the given dataset and our approaches. Furthermore, we discuss the problems we have encountered during our work on the benchmark. We show, that one of the most limiting factors for improving on the given baseline model is the poor label quality of the given dataset. Given that the size of the orhomosaics in the dataset is considerably large, the images have to be chipped into smaller patches. When running inference on these patches, the context to be analyzed is lost. To tackle this issue, we used an approach we called Cascading Inference. For a deeper dive into our project, please read the [report](FSDL_Report.pdf).
 
 ## Installation
-
-Run the setup bash script to install all dependencies.
+First, run the setup bash script to install all dependencies.
 
 ```bash
 bash setup.sh
@@ -20,6 +21,8 @@ Afterwards run the download_data.py script to download and chip the dataset. Thi
 ```
 python download_data.py
 ```
+
+Rename the config_template.dat file to config.dat and set the num_worker count ideal for your machine. When using the --read_config flag the script will automatically set the num_workers to the count defined in the config.dat file.
 
 ## Train
 From the project folder run the run_experiment.py script. To replicate the model we submitted to the wandb benchmark, run the the script with the following arguments.
@@ -47,6 +50,8 @@ training/run_experiment_and_inference.py --wandb --batch_size=8 --data_class=Aer
 
 Check out our submitted run by clicking the following link.<br/>
 https://wandb.ai/team_jf/aerialsegmenation-submission/runs/1mygfkxh/overview?workspace=user-
+
+Please note that it is very likely that the results you will get from running the script will differ to the ones we reported. This is due to the fact that we trained the model in parallel on multiple GPUs. This parallelism introduces race conditions.
 
 ## License
 [MIT](https://choosealicense.com/licenses/mit/)
