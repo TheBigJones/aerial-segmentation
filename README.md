@@ -50,8 +50,5 @@ training/run_experiment_and_inference.py --wandb --batch_size=8 --data_class=Aer
 
 Check out our submitted run by clicking the following link.<br/>
 https://wandb.ai/team_jf/aerialsegmenation-submission/runs/1mygfkxh/overview?workspace=user-
-
-Please note that it is very likely that the results you will get from running the script will differ to the ones we reported. This is due to the fact that we trained the model in parallel on multiple GPUs. This parallelism introduces race conditions.
-
 ## License
 [MIT](https://choosealicense.com/licenses/mit/)
